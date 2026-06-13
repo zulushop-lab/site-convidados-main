@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == 'matheusrs180@gmail.com' && request.auth.token.email_verified == true
+      );
+    }
+
+    // RSVP Validation
+    function isValidRSVP(data) {
+      return data.adults is list && 
+             data.childrenCount is int && 
+             data.childrenCount >= 0 &&
+             data.createdAt == request.time &&
+             (data.keys().hasAll(['adults', 'childrenCount', 'createdAt']) && data.keys().size() >= 3);
+    }
+
+    match /rsvps/{rsvpId} {
+      allow create: if isValidRSVP(incoming());
+      allow read: if isAdmin();
+    }
+
+    // Gift Validation
+    function isValidGift(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.price is number && data.price >= 0 &&
+             data.category is string &&
+             (data.isBought == null || data.isBought is bool);
+    }
+
+    match /gifts/{giftId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidGift(incoming());
+    }
+
+    // Contribution Validation
+    function isValidContribution(data) {
+      return data.amount is number && data.amount > 0 &&
+             data.donorName is string && data.donorName.size() <= 200 &&
+             data.status in ['pending', 'completed'] &&
+             data.createdAt == request.time;
+    }
+
+    match /contributions/{contribId} {
+      allow create: if isValidContribution(incoming());
+      allow read: if isAdmin(); // Only admins see the full list of contributions
+    }
+  }
+}

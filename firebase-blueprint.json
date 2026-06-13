@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "RSVP": {
+      "title": "Confirmação de Presença",
+      "description": "Dados de confirmação de presença dos convidados.",
+      "type": "object",
+      "properties": {
+        "adults": {
+          "type": "array",
+          "description": "Lista de adultos e seu status de confirmação."
+        },
+        "childrenCount": {
+          "type": "integer",
+          "description": "Número de crianças convidadas."
+        },
+        "dietary": {
+          "type": "string",
+          "description": "Restrições alimentares ou observações."
+        },
+        "message": {
+          "type": "string",
+          "description": "Mensagem para os noivos."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data de criação do registro."
+        }
+      },
+      "required": ["adults", "childrenCount", "createdAt"]
+    },
+    "Gift": {
+      "title": "Presente",
+      "description": "Item da lista de presentes.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "imageSrc": { "type": "string" },
+        "isBought": { "type": "boolean" }
+      },
+      "required": ["title", "category", "price"]
+    },
+    "Contribution": {
+      "title": "Contribuição",
+      "description": "Registro de presente comprado ou contribuição feita.",
+      "type": "object",
+      "properties": {
+        "giftId": { "type": "string" },
+        "amount": { "type": "number" },
+        "donorName": { "type": "string" },
+        "donorEmail": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "donorName", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "rsvps": {
+      "schema": "RSVP",
+      "description": "Coleção de confirmações de presença."
+    },
+    "gifts": {
+      "schema": "Gift",
+      "description": "Coleção de itens da lista de presentes."
+    },
+    "contributions": {
+      "schema": "Contribution",
+      "description": "Coleção de contribuições feitas pelos convidados."
+    }
+  }
+}

@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 250, 249, 247;
+    --on-background: 47, 51, 49;
+    --primary: 95, 94, 94;
+    --primary-dim: 83, 82, 82;
+    --primary-container: 228, 226, 225;
+    --on-primary: 250, 247, 246;
+    --secondary: 102, 94, 81;
+    --secondary-dim: 90, 82, 70;
+    --on-secondary: 255, 248, 241;
+    --surface: 250, 249, 247;
+    --surface-lowest: 255, 255, 255;
+    --surface-low: 243, 244, 241;
+    --surface-container: 237, 238, 235;
+    --surface-high: 230, 233, 230;
+    --surface-highest: 224, 227, 224;
+    --on-surface: 47, 51, 49;
+    --on-surface-variant: 92, 96, 93;
+    --outline: 119, 124, 121;
+    --outline-variant: 175, 179, 176;
+    --gold: 197, 160, 89;
+    --gold-dim: 166, 133, 74;
+  }
+
+  .dark {
+    --background: 26, 28, 27;
+    --on-background: 226, 227, 223;
+    --primary: 198, 199, 196;
+    --primary-dim: 170, 174, 173;
+    --primary-container: 71, 72, 70;
+    --on-primary: 47, 49, 48;
+    --secondary: 208, 199, 183;
+    --secondary-dim: 180, 170, 156;
+    --on-secondary: 54, 47, 37;
+    --surface: 26, 28, 27;
+    --surface-lowest: 15, 17, 16;
+    --surface-low: 29, 30, 29;
+    --surface-container: 33, 34, 33;
+    --surface-high: 43, 44, 42;
+    --surface-highest: 54, 55, 53;
+    --on-surface: 226, 227, 223;
+    --on-surface-variant: 192, 201, 196;
+    --outline: 138, 147, 142;
+    --outline-variant: 64, 73, 69;
+    --gold: 223, 189, 129;
+    --gold-dim: 197, 160, 89;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--on-background));
+    @apply font-body selection:bg-gold/30 selection:text-on-background overflow-x-hidden;
+  }
+  
+  /* Improve focus visibility for keyboard users */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+    --tw-ring-offset-color: var(--background);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-on-primary font-label uppercase tracking-widest text-xs transition-all active:scale-[0.98] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary rounded-sm hover:bg-primary-dim;
+  }
+  
+  .btn-secondary {
+    @apply border border-outline-variant/30 text-primary font-label uppercase tracking-widest text-xs hover:bg-surface-container-low transition-all active:scale-[0.98] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary rounded-sm;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  /* Wedding Glass Effect adapted from Liquid Glass */
+  .wedding-glass {
+    background: rgba(var(--surface-lowest), 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--gold), 0.15);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 8px 32px rgba(var(--on-background), 0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .dark .wedding-glass {
+    background: rgba(var(--surface-lowest), 0.15);
+    border: 1px solid rgba(var(--gold), 0.1);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .wedding-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(180deg,
+      rgba(var(--gold), 0.25) 0%, rgba(var(--gold), 0.05) 20%,
+      rgba(var(--gold), 0) 40%, rgba(var(--gold), 0) 60%,
+      rgba(var(--gold), 0.05) 80%, rgba(var(--gold), 0.25) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Liquid Glass Effect from Prompt */
+  .liquid-glass {
+    background: rgba(var(--surface-lowest), 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: none;
+    box-shadow: inset 0 1px 1px rgba(var(--gold), 0.1), 0 4px 12px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  .dark .liquid-glass {
+    background: rgba(0, 0, 0, 0.4);
+    background-blend-mode: luminosity;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  }
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.4px;
+    background: linear-gradient(180deg,
+      rgba(var(--gold), 0.3) 0%, rgba(var(--gold), 0.1) 20%,
+      rgba(var(--gold), 0) 40%, rgba(var(--gold), 0) 60%,
+      rgba(var(--gold), 0.1) 80%, rgba(var(--gold), 0.3) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
