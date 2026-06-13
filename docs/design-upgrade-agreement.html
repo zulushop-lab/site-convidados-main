@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acordo de Upgrade do Design System — Isadora &amp; Matheus</title>
+<style>
+  :root{
+    --bg:#faf9f7; --ink:#2f3331; --ink-soft:#5c605d; --line:#afb3b0;
+    --gold:#c5a059; --gold-readable:#8c6a0a; --surface:#fff; --surface-2:#f3f4f1;
+    --crit:#b3261e; --ok:#3f6b3f; --warn:#9a6b00;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Cormorant Garamond","Georgia",serif;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:64px 28px 96px}
+  .label{font-family:"Montserrat","Segoe UI",sans-serif;text-transform:uppercase;
+    letter-spacing:.28em;font-size:11px;color:var(--gold-readable);font-weight:600}
+  h1{font-size:clamp(2.4rem,6vw,3.6rem);font-style:italic;font-weight:600;
+    line-height:1.05;margin:.3em 0 .1em}
+  h2{font-style:italic;font-weight:600;font-size:1.9rem;margin:2.4em 0 .2em;
+    border-bottom:1px solid var(--line);padding-bottom:.25em}
+  .sub{color:var(--ink-soft);font-size:1.25rem;font-style:italic}
+  .mono{font-family:"Montserrat",sans-serif;font-size:.82rem;letter-spacing:.04em}
+  .rule{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    margin:34px 0;border:0}
+  .card{background:var(--surface);border:1px solid #e4e2e1;border-left:3px solid var(--gold);
+    border-radius:6px;padding:18px 22px;margin:16px 0;
+    box-shadow:0 8px 32px rgba(47,51,49,.04)}
+  .card h3{margin:0 0 .2em;font-style:italic;font-size:1.35rem}
+  .card .q{font-family:"Montserrat",sans-serif;font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.18em;color:var(--ink-soft)}
+  .pill{display:inline-block;font-family:"Montserrat",sans-serif;font-size:.7rem;
+    letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:999px;
+    background:rgba(197,160,89,.14);color:var(--gold-readable);border:1px solid rgba(197,160,89,.35);
+    margin-left:8px;vertical-align:middle}
+  ul{padding-left:1.1em}
+  li{margin:.35em 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .flag{border-left-color:var(--warn)}
+  .sign{margin-top:48px;display:flex;justify-content:space-between;gap:20px;
+    border-top:1px solid var(--line);padding-top:22px;flex-wrap:wrap}
+  .sign div{font-family:"Montserrat",sans-serif;font-size:.78rem;color:var(--ink-soft)}
+  .sign b{display:block;color:var(--ink);font-size:1.4rem;font-family:"Cormorant Garamond",serif;
+    font-style:italic;font-weight:600;margin-bottom:2px}
+  .seal{font-style:italic;color:var(--gold-readable)}
+  code{background:var(--surface-2);padding:1px 6px;border-radius:4px;
+    font-family:ui-monospace,monospace;font-size:.82em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="label">Acordo de Entendimento Mútuo · grill-me</span>
+  <h1>Upgrade do Design System</h1>
+  <p class="sub">Site de casamento Isadora &amp; Matheus — Next.js 15 · Tailwind · motion · Firebase</p>
+  <p class="mono" style="color:var(--ink-soft)">Documento gerado para alimentar o <code>/design-md</code> · entregável: <b>DESIGN.md v2</b></p>
+
+  <hr class="rule" />
+
+  <h2>Resumo Executivo</h2>
+  <p>Vamos produzir um <b>DESIGN.md v2 prescritivo</b> que <b>preserva a identidade atual</b> (ouro como acento, neutros quentes Material-3, vidro editorial, motion expo-out) e <b>formaliza os tokens hoje ausentes</b>, elevando o sistema a conformidade <b>WCAG AA completa</b>. O documento é a fonte-da-verdade e o mapa de migração; o refactor do código virá num ciclo seguinte, guiado por ele.</p>
+
+  <h2>Decisões Centrais</h2>
+
+  <div class="card">
+    <span class="q">Q1 · Ambição</span>
+    <h3>v2 prescritivo <span class="pill">decidido</span></h3>
+    <p>Fonte-da-verdade que preserva a identidade e formaliza os tokens faltantes, servindo de alvo para um refactor incremental. Documenta o estado atual <i>e</i> o alvo (as-is → to-be).</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q2 · Acessibilidade</span>
+    <h3>WCAG AA completo <span class="pill">decidido</span></h3>
+    <p>Contraste AA garantido em todos os tokens; <code>prefers-reduced-motion</code> como tier de 1ª classe do sistema de motion; <b>fallback acessível (teclado/tap + ARIA) em toda ação por gesto</b> — o gesto continua sendo a forma <i>preferida</i>, nunca a única.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q3 · Estratégia do ouro</span>
+    <h3>Escala dourada dupla <span class="pill">decidido</span></h3>
+    <p>Dois ouros reativos ao tema: <b><code>gold-expressive</code></b> (decorativo — bordas, glow, ícones, títulos display ≥24px) e <b><code>gold-readable</code></b> (~#8C6A0A no claro, p/ texto pequeno passar AA 4.5:1). Hex crus (<code>#d4af37</code>, <code>#F2D780</code>, <code>rgba(212,175,55)</code>) banidos — tudo deriva de token.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q4 · Tipografia</span>
+    <h3>Três vozes reais <span class="pill">decidido</span></h3>
+    <p><b>Display/Título</b> = Playfair itálico (já carregada) · <b>Corpo</b> = Cormorant · <b>Labels/metadados</b> = Montserrat (uppercase, tracking largo) · <b>Nomes do casal</b> = Alex Brush (restrito). <b>Newsreader e Zeyada cortadas</b> (custo morto). Fim do <code>headline == body</code>.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q5 · Vidro</span>
+    <h3>Sistema único, 3 níveis <span class="pill">decidido</span></h3>
+    <p>Fonte única: <code>glass-sm/md/lg</code> (≈ blur 8/12/24px) + tokens <code>glass-bg</code>, <code>glass-border</code> (gradiente dourado simétrico), <code>glass-highlight</code>, reativos ao tema. Todos os consumidores (dock, modais, sliders, Countdown, Footer) migram; <code>.liquid-glass</code> e os glass inline são eliminados.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q6 · Entregável deste ciclo</span>
+    <h3>Apenas o DESIGN.md v2 <span class="pill">decidido</span></h3>
+    <p>Documento completo (tokens + 8 princípios como diretrizes acionáveis + regras AA + mapa de migração). O refactor do código (CSS/Tailwind/componentes) fica para um ciclo seguinte. Decisões primeiro, menor risco.</p>
+  </div>
+
+  <h2>Implicações Resolvidas por Dependência</h2>
+  <p>Decorrem direto de <i>v2 prescritivo + AA</i> — serão tokenizadas no DESIGN.md sem nova pergunta:</p>
+  <div class="grid">
+    <div class="card"><h3 style="font-size:1.1rem">Escalas estruturais</h3>
+      <ul class="mono"><li>spacing (ritmo seção/componente)</li><li>radius (sm/md/lg/pill)</li><li>z-index (camadas nomeadas)</li></ul></div>
+    <div class="card"><h3 style="font-size:1.1rem">Profundidade &amp; movimento</h3>
+      <ul class="mono"><li>shadow/elevação + glow dourado reativo</li><li>motion: ease-expo (0.22,1,0.36,1), springs, durations</li><li>tier reduced-motion</li></ul></div>
+    <div class="card"><h3 style="font-size:1.1rem">Cor semântica</h3>
+      <ul class="mono"><li>error / success / warning / info</li><li>pares on-* + containers</li><li>token fantasma <code>primary-fixed-dim</code> definido</li></ul></div>
+    <div class="card"><h3 style="font-size:1.1rem">Os 8 princípios</h3>
+      <ul class="mono"><li>reescritos como diretrizes acionáveis</li><li>cada um com regra de token + nota AA</li></ul></div>
+  </div>
+
+  <h2>Restrições &amp; Não-Negociáveis</h2>
+  <ul>
+    <li><b>Preservar a identidade</b>: ouro como acento único + neutros quentes dessaturados + vidro editorial.</li>
+    <li><b>Dois temas first-class</b>: claro e escuro, calibrados token a token.</li>
+    <li><b>Preservar</b> a intro cinematográfica da Catedral e os assets de monograma (charcoal/gold/ivory).</li>
+    <li><b>Curva-assinatura</b> <code>cubic-bezier(0.22,1,0.36,1)</code> mantida como easing canônico (agora tokenizado).</li>
+  </ul>
+
+  <h2>Incógnitas Sinalizadas</h2>
+  <div class="card flag"><p>Itens fora do escopo deste DESIGN.md, mas que o documento deve <b>referenciar</b> como pré-requisitos do produto (vêm da análise crítica):</p>
+    <ul>
+      <li>Valores numéricos exatos das escalas (spacing/radius/shadow) serão <b>propostos pelo <code>/design-md</code></b> e ajustáveis.</li>
+      <li>O <code>gold-readable</code> exato no <b>tema escuro</b> precisa de checagem de contraste contra <code>surface</code> escuro (≠ do claro).</li>
+      <li>Riscos não-visuais (pagamento simulado, RSVP-First, rules, <code>eval</code> de CDN) <b>não</b> entram no DESIGN.md — ficam para a trilha de engenharia.</li>
+    </ul>
+  </div>
+
+  <h2>Próximos Passos</h2>
+  <ol>
+    <li>Rodar <code>/design-md</code> para gerar o <b>DESIGN.md v2</b> a partir deste acordo + tokens extraídos do código.</li>
+    <li>Validar contrastes AA dos pares de ouro (claro <i>e</i> escuro) e dos estados semânticos.</li>
+    <li>(Ciclo seguinte) Export para <code>tailwind.config</code>/<code>globals.css</code> e migração incremental dos componentes.</li>
+  </ol>
+
+  <div class="sign">
+    <div><b>Matheus</b><span class="seal">de acordo</span></div>
+    <div><b>Claude</b><span class="seal">de acordo</span></div>
+    <div style="text-align:right"><b class="mono" style="font-style:normal;font-size:.95rem">2026-06-13</b><span>entendimento mútuo selado</span></div>
+  </div>
+
+</div>
+</body>
+</html>
