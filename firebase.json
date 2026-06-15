@@ -1,5 +1,6 @@
 {
   "firestore": {
+    "database": "ai-studio-remixmatheusisad-2704bafb-b28b-4074-97fe-0650887857e8",
     "rules": "firestore.rules"
   },
   "emulators": {

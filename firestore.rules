@@ -17,17 +17,35 @@ service cloud.firestore {
       );
     }
 
+    // Identity Collections (codes, families, guests)
+    match /codes/{code} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
+    match /families/{familyId} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
+    match /guests/{guestId} {
+      allow get: if true;
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // RSVP Validation
     function isValidRSVP(data) {
-      return data.adults is list && 
-             data.childrenCount is int && 
+      return data.familyId is string && isValidId(data.familyId) &&
+             data.confirmedBy is string && isValidId(data.confirmedBy) &&
+             data.adults is list &&
+             data.childrenCount is int &&
              data.childrenCount >= 0 &&
-             data.createdAt == request.time &&
-             (data.keys().hasAll(['adults', 'childrenCount', 'createdAt']) && data.keys().size() >= 3);
+             data.createdAt == request.time;
     }
 
     match /rsvps/{rsvpId} {
-      allow create: if isValidRSVP(incoming());
+      allow create: if isSignedIn() && isValidRSVP(incoming());
       allow read: if isAdmin();
       allow list: if isAdmin();
     }

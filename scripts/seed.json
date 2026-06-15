@@ -1,0 +1,60 @@
+{
+  "__collection__": {
+    "codes": {
+      "__docs__": {
+        "EDRQ7ZSH": {
+          "familyId": {
+            "stringValue": "fam_casal"
+          }
+        }
+      }
+    },
+    "families": {
+      "__docs__": {
+        "fam_casal": {
+          "id": {
+            "stringValue": "fam_casal"
+          },
+          "name": {
+            "stringValue": "Matheus & Isadora"
+          },
+          "code": {
+            "stringValue": "EDRQ7ZSH"
+          }
+        }
+      }
+    },
+    "guests": {
+      "__docs__": {
+        "g_matheus": {
+          "id": {
+            "stringValue": "g_matheus"
+          },
+          "familyId": {
+            "stringValue": "fam_casal"
+          },
+          "name": {
+            "stringValue": "Matheus"
+          },
+          "isMainGuest": {
+            "booleanValue": true
+          }
+        },
+        "g_isadora": {
+          "id": {
+            "stringValue": "g_isadora"
+          },
+          "familyId": {
+            "stringValue": "fam_casal"
+          },
+          "name": {
+            "stringValue": "Isadora"
+          },
+          "isMainGuest": {
+            "booleanValue": true
+          }
+        }
+      }
+    }
+  }
+}
