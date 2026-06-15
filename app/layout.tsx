@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Newsreader, Montserrat, Zeyada, Cormorant_Garamond, Playfair_Display, Alex_Brush } from 'next/font/google';
+import { Montserrat, Cormorant_Garamond, Playfair_Display, Alex_Brush } from 'next/font/google';
 
 const alexBrush = Alex_Brush({
   subsets: ['latin'],
@@ -31,24 +31,11 @@ import { GlobalNavigationOptions } from '@/components/GlobalMenu';
 
 import { GlobalAudioPlayer } from '@/components/GlobalAudioPlayer';
 
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  style: ['italic'],
-  weight: ['200', '400', '500', '700'],
-  variable: '--font-newsreader',
-});
-
 const montserrat = Montserrat({
   subsets: ['latin'],
   style: ['normal', 'italic'],
   weight: ['300', '400', '500', '600'],
   variable: '--font-montserrat',
-});
-
-const zeyada = Zeyada({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-zeyada',
 });
 
 export const metadata: Metadata = {
@@ -61,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${newsreader.variable} ${montserrat.variable} ${zeyada.variable} ${cormorant.variable} ${playfair.variable} ${alexBrush.variable}`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${montserrat.variable} ${cormorant.variable} ${playfair.variable} ${alexBrush.variable}`}>
       <body className="antialiased min-h-[100dvh] flex flex-col font-body">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <GlobalAudioPlayer />

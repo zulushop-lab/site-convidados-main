@@ -46,8 +46,6 @@ const config: Config = {
         headline: ["var(--font-cormorant)", "serif"],
         body: ["var(--font-cormorant)", "serif"],
         label: ["var(--font-montserrat)", "sans-serif"],
-        zeyada: ["var(--font-zeyada)", "cursive"],
-        newsreader: ["var(--font-newsreader)", "serif"],
         playfair: ["var(--font-playfair)", "serif"],
         "alex-brush": ["var(--font-alex-brush)", "cursive"],
       },

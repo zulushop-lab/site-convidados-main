@@ -646,7 +646,7 @@ export default function PresentesPage() {
             >
               <button 
                 onClick={() => setSelectedGift(null)}
-                aria-label="Refechar modal"
+                aria-label="Fechar modal"
                 className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/40 transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -987,7 +987,7 @@ export default function PresentesPage() {
                     onClick={() => setVisibleCount((prev) => prev + 12)}
                     className="px-8 py-4 border border-gold text-gold hover:bg-gold/5 font-label text-[10px] uppercase tracking-[0.2em] transition-all rounded-sm"
                   >
-                    Carregar Mais Presentes ({filteredGifts.length - visibleCount} descatologados)
+                    Carregar Mais Presentes ({filteredGifts.length - visibleCount} restantes)
                   </button>
                 </div>
               )}
