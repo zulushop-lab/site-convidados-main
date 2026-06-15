@@ -22,6 +22,12 @@ const testEnv = await initializeTestEnvironment({
   },
 });
 
+const guest = () =>
+  testEnv.authenticatedContext("guest-user", {
+    provider_id: "anonymous",
+    firebase: { sign_in_provider: "anonymous" },
+  });
+
 const tests = [];
 const addTest = (name, run) => tests.push({ name, run });
 
@@ -104,6 +110,70 @@ addTest("baseline guard: non-admin contribution update is denied", async () => {
   );
 
   await assertFails(ref.update({ status: "completed" }));
+});
+
+// --- tieBids (Gravata do Noivo) ---
+
+addTest("tieBids: signed-in guest can create a valid pending bid", async () => {
+  const db = guest().firestore();
+
+  await assertSucceeds(
+    db.collection("tieBids").doc("bid-pending").set({
+      amount: 150,
+      message: "Que vença a família mais animada!",
+      status: "pending",
+      createdAt: now(),
+    }),
+  );
+});
+
+addTest("tieBids: signed-in guest cannot forge completed status", async () => {
+  const db = guest().firestore();
+
+  await assertFails(
+    db.collection("tieBids").doc("bid-completed").set({
+      amount: 150,
+      status: "completed",
+      createdAt: now(),
+    }),
+  );
+});
+
+addTest("tieBids: anonymous (unauthenticated) create is denied", async () => {
+  const db = testEnv.unauthenticatedContext().firestore();
+
+  await assertFails(
+    db.collection("tieBids").doc("bid-no-auth").set({
+      amount: 150,
+      status: "pending",
+      createdAt: now(),
+    }),
+  );
+});
+
+addTest("tieBids: bid amount must be positive", async () => {
+  const db = guest().firestore();
+
+  await assertFails(
+    db.collection("tieBids").doc("bid-zero").set({
+      amount: 0,
+      status: "pending",
+      createdAt: now(),
+    }),
+  );
+});
+
+addTest("tieBids: message over 500 chars is rejected", async () => {
+  const db = guest().firestore();
+
+  await assertFails(
+    db.collection("tieBids").doc("bid-long-message").set({
+      amount: 150,
+      message: "x".repeat(501),
+      status: "pending",
+      createdAt: now(),
+    }),
+  );
 });
 
 try {

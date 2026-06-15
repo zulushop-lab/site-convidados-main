@@ -59,5 +59,23 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow list: if isAdmin();
     }
+
+    // TieBid Validation (Gravata do Noivo)
+    // Cliente cria apenas 'pending'; promocao de status e exclusiva do servidor (Admin SDK).
+    function isValidTieBid(data) {
+      return data.amount is number && data.amount > 0 &&
+             data.status == 'pending' &&
+             data.createdAt == request.time &&
+             (data.message == null || (data.message is string && data.message.size() <= 500)) &&
+             (!('familyId' in data) || isValidId(data.familyId)) &&
+             (!('guestId' in data) || isValidId(data.guestId));
+    }
+
+    match /tieBids/{bidId} {
+      allow create: if isSignedIn() && isValidTieBid(incoming());
+      allow update: if isAdmin();
+      // Leaderboard publico real so apos leaderboards/* derivados (SPEC-GRAVATA completa).
+      allow read, list: if isAdmin();
+    }
   }
 }

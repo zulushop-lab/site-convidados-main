@@ -56,12 +56,14 @@ export interface Contribution {
   createdAt: number;
 }
 
+export type TieBidStatus = 'pending' | 'processing' | 'completed' | 'failed';
+
 export interface TieBid {
   id: string;
-  amount: number;
-  guestId: string;
-  familyId: string; // Desnormalizado para facilitar as agregacoes dos lideres (Ranking de Familias).
-  message?: string;
+  amount: number; // BRL decimal, ex. 150.00 (mesma unidade de Contribution). > 0.
+  guestId?: string; // Opcional ate SPEC-RSVP-AUTH carimbar identidade.
+  familyId?: string; // Opcional; ranking por familia so conta quando presente. Desnormalizado p/ agregacoes (ADR-0004).
+  message?: string; // Ate 500 chars.
   createdAt: number;
-  status: 'pending' | 'paid';
+  status: TieBidStatus; // Cliente cria apenas 'pending'; promocao e exclusiva do servidor.
 }

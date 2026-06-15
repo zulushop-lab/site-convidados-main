@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Users, User, Trophy, Medal, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { TieBid } from "@/domain/types";
 
 type LeaderboardTab = "family" | "individual";
 
@@ -14,24 +15,23 @@ interface LeaderboardEntry {
   rank: number;
 }
 
-const mockFamilyData: LeaderboardEntry[] = [
-  { id: "f1", name: "Família Silva", amount: 1500, rank: 1 },
-  { id: "f2", name: "Família Santos", amount: 1200, rank: 2 },
-  { id: "f3", name: "Família Oliveira", amount: 800, rank: 3 },
-  { id: "f4", name: "Família Costa", amount: 450, rank: 4 },
-];
-
-const mockIndividualData: LeaderboardEntry[] = [
-  { id: "i1", name: "Tio João", amount: 800, rank: 1 },
-  { id: "i2", name: "Primo Carlos", amount: 600, rank: 2 },
-  { id: "i3", name: "Madrinha Ana", amount: 500, rank: 3 },
-  { id: "i4", name: "Amigo Marcos", amount: 300, rank: 4 },
-];
+// TODO(SPEC-GRAVATA-LEADERBOARD): substituir o estado vazio por leitura real de
+// `leaderboards/family` e `leaderboards/individual` (agregados derivados por servidor),
+// com lookup de nomes via roster de SPEC-RSVP-AUTH. Somente lances `TieBid.status === 'completed'`
+// entram no ranking. Enquanto nao houver pipeline MP + agregacao, mantemos estado vazio honesto.
+const familyData: LeaderboardEntry[] = [];
+const individualData: LeaderboardEntry[] = [];
 
 export const TieLeaderboard = ({ className }: { className?: string }) => {
   const [activeTab, setActiveTab] = useState<LeaderboardTab>("family");
 
-  const currentData = activeTab === "family" ? mockFamilyData : mockIndividualData;
+  const currentData: LeaderboardEntry[] =
+    activeTab === "family" ? familyData : individualData;
+
+  // Garante alinhamento com o contrato unico de schema (domain/types) sem persistir
+  // dados mock: o ranking real sera derivado de TieBid['status'] === 'completed'.
+  const RANKED_STATUS: TieBid["status"] = "completed";
+  void RANKED_STATUS;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -110,7 +110,21 @@ export const TieLeaderboard = ({ className }: { className?: string }) => {
             transition={{ duration: 0.3 }}
             className="flex flex-col gap-3"
           >
-            {currentData.map((entry) => (
+            {currentData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center min-h-[280px] gap-4 px-4">
+                <div className="bg-gold/10 p-4 rounded-full">
+                  <Trophy className="w-8 h-8 text-gold" />
+                </div>
+                <p className="font-headline italic text-xl text-on-surface">
+                  Seja o primeiro a dar um lance!
+                </p>
+                <p className="font-body text-sm text-on-surface-variant max-w-xs">
+                  O ranking aparece aqui assim que os primeiros lances forem
+                  confirmados. Que vença a família mais animada.
+                </p>
+              </div>
+            ) : (
+              currentData.map((entry) => (
               <div 
                 key={entry.id} 
                 className={cn(
@@ -130,7 +144,8 @@ export const TieLeaderboard = ({ className }: { className?: string }) => {
                   {formatCurrency(entry.amount)}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
