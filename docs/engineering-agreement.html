@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acordo de Engenharia — Isadora &amp; Matheus</title>
+<style>
+  :root{
+    --bg:#faf9f7; --ink:#2f3331; --ink-soft:#5c605d; --line:#afb3b0;
+    --gold:#c5a059; --gold-readable:#8c6a0a; --surface:#fff; --surface-2:#f3f4f1;
+    --crit:#b3261e; --ok:#3f6b3f; --warn:#9a6b00;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Cormorant Garamond","Georgia",serif;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:64px 28px 96px}
+  .label{font-family:"Montserrat","Segoe UI",sans-serif;text-transform:uppercase;
+    letter-spacing:.28em;font-size:11px;color:var(--gold-readable);font-weight:600}
+  h1{font-size:clamp(2.4rem,6vw,3.6rem);font-style:italic;font-weight:600;
+    line-height:1.05;margin:.3em 0 .1em}
+  h2{font-style:italic;font-weight:600;font-size:1.9rem;margin:2.4em 0 .2em;
+    border-bottom:1px solid var(--line);padding-bottom:.25em}
+  .sub{color:var(--ink-soft);font-size:1.25rem;font-style:italic}
+  .mono{font-family:"Montserrat",sans-serif;font-size:.82rem;letter-spacing:.04em}
+  .rule{height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    margin:34px 0;border:0}
+  .card{background:var(--surface);border:1px solid #e4e2e1;border-left:3px solid var(--gold);
+    border-radius:6px;padding:18px 22px;margin:16px 0;
+    box-shadow:0 8px 32px rgba(47,51,49,.04)}
+  .card h3{margin:0 0 .2em;font-style:italic;font-size:1.35rem}
+  .card .q{font-family:"Montserrat",sans-serif;font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.18em;color:var(--ink-soft)}
+  .pill{display:inline-block;font-family:"Montserrat",sans-serif;font-size:.7rem;
+    letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:999px;
+    background:rgba(197,160,89,.14);color:var(--gold-readable);border:1px solid rgba(197,160,89,.35);
+    margin-left:8px;vertical-align:middle}
+  .pill.crit{background:rgba(179,38,30,.1);color:var(--crit);border-color:rgba(179,38,30,.3)}
+  .pill.warn{background:rgba(154,107,0,.12);color:var(--warn);border-color:rgba(154,107,0,.3)}
+  ul{padding-left:1.1em}
+  li{margin:.35em 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .flag{border-left-color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:1.02rem}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid #e4e2e1;vertical-align:top}
+  th{font-family:"Montserrat",sans-serif;font-size:.68rem;text-transform:uppercase;
+    letter-spacing:.14em;color:var(--ink-soft);font-weight:600}
+  td b{color:var(--ink)}
+  .step{display:flex;gap:14px;align-items:flex-start;margin:12px 0}
+  .num{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--gold);
+    color:#fff;font-family:"Montserrat",sans-serif;font-weight:600;font-size:.85rem;
+    display:flex;align-items:center;justify-content:center;margin-top:3px}
+  .sign{margin-top:48px;display:flex;justify-content:space-between;gap:20px;
+    border-top:1px solid var(--line);padding-top:22px;flex-wrap:wrap}
+  .sign div{font-family:"Montserrat",sans-serif;font-size:.78rem;color:var(--ink-soft)}
+  .sign b{display:block;color:var(--ink);font-size:1.4rem;font-family:"Cormorant Garamond",serif;
+    font-style:italic;font-weight:600;margin-bottom:2px}
+  .seal{font-style:italic;color:var(--gold-readable)}
+  code{background:var(--surface-2);padding:1px 6px;border-radius:4px;
+    font-family:ui-monospace,monospace;font-size:.82em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="label">Acordo de Entendimento Mútuo · grill-me</span>
+  <h1>Plano de Engenharia</h1>
+  <p class="sub">Site de casamento Isadora &amp; Matheus — Next.js 15 · Tailwind · motion · Firebase</p>
+  <p class="mono" style="color:var(--ink-soft)">Documento gerado para alimentar a execução · entregável: <b>8 SPECs + plano-mestre</b> (<code>docs/engineering-plan-v2.md</code>, <code>docs/specs/</code>)</p>
+
+  <hr class="rule" />
+
+  <h2>Resumo Executivo</h2>
+  <p>O site é um <b>protótipo visual de altíssima fidelidade com o núcleo transacional de fachada</b>. Este acordo transforma esse núcleo em algo <b>real e honesto</b>: pagamento de verdade (Mercado Pago), RSVP autenticado por <b>link de WhatsApp</b>, regras de segurança que não deixam mais qualquer anônimo forjar uma doação <code>completed</code>, e o fim do <code>eval()</code> de CDN. O trabalho está dividido em <b>8 SPECs</b>, <b>2 tracks paralelos</b> e <b>6 sprints</b>, com verificação em camadas (emulador + sandbox + localhost). Entregável deste ciclo: <b>só o plano</b>; a implementação vem depois.</p>
+
+  <h2>Decisões Centrais</h2>
+
+  <div class="grid">
+    <div class="card">
+      <span class="q">Q1 · Pagamento</span>
+      <h3>Mercado Pago, por último <span class="pill">decidido</span></h3>
+      <p>Provedor = <b>Mercado Pago</b> (Pix dinâmico + webhooks). Ordem travada pelo noivo: <b>primeiro o catálogo real de presentes</b> (itens com descrição/foto/preço → categorias), <b>depois</b> o pagamento. ADR-0001 (hoje PagSeguro) será atualizada.</p>
+    </div>
+    <div class="card">
+      <span class="q">Q2 · Guarda de convidado</span>
+      <h3>GuestGate SOFT <span class="pill">decidido</span></h3>
+      <p>O código personaliza e carimba <code>familyId/guestId</code>, mas <b>não bloqueia</b> navegação anônima. Menor risco de travar um convidado real. Endurecimento forte fica para o App Check (depois).</p>
+    </div>
+    <div class="card">
+      <span class="q">Q3 · Status de pagamento</span>
+      <h3>ENUM de 4 estados <span class="pill">decidido</span></h3>
+      <p><code>pending · processing · completed · failed</code>. Cliente só cria <code>pending</code>; <b>só o servidor</b> (webhook + Admin SDK) promove. Resolve o "pagamento falho depois de pendente" sem limpeza manual.</p>
+    </div>
+    <div class="card">
+      <span class="q">Q4 · Autenticação</span>
+      <h3>Anonymous Auth agora <span class="pill">decidido</span></h3>
+      <p>Anonymous Auth dá um <code>uid</code> para carimbar writes e habilitar <code>isSignedIn()</code> nas rules sem fricção. <b>App Check (anti-bot) fica para sprint posterior.</b></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="q">Q5 · Modelo de auth do convidado · o coração da decisão</span>
+    <h3>Capability URL via WhatsApp pessoal <span class="pill">decidido</span></h3>
+    <p>O link entregue no WhatsApp pessoal <b>é a autenticação</b> (magic link). O segredo é um <b>código de alta entropia</b> (8–10 chars, ~40+ bits, inadivinhável) na URL — posse do link = prova de ser convidado. Sem senha, sem login. Recuperação de link perdido = o casal reenvia pelo WhatsApp (consequência aceita do soft gate).</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q6 · Granularidade do código</span>
+    <h3>Um código por família + sub-identificação <span class="pill">decidido</span></h3>
+    <p>Base <code>/rsvp/&lt;código&gt;</code> serve a família inteira. Sem dica → pergunta <i>"quem é você?"</i> (roster real). Link individual opcional <code>/rsvp/&lt;código&gt;?c=&lt;guestId&gt;</code> pré-seleciona a pessoa. <b>Distribuível tanto por família quanto individualmente.</b> A dica é conveniência; a barreira é o código de família.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q7 · RSVP de família</span>
+    <h3>1 doc por família, qualquer um edita <span class="pill">decidido</span></h3>
+    <p>Um documento em <code>rsvps</code> por <code>familyId</code>. Um membro confirma por todos (roster <code>adults[]</code>); qualquer membro edita depois (<code>updatedBy</code>). Reentrada de quem já confirmou → tela <b>"já confirmado"</b> com resumo (quem confirmou, quando, quem vai) + <b>[Editar resposta]</b> + <b>[Ir para Home/Presentes]</b>.</p>
+  </div>
+
+  <div class="card">
+    <span class="q">Q8 · Ferramenta de seed</span>
+    <h3>Script admin → códigos + mensagem de WhatsApp <span class="pill">decidido</span></h3>
+    <p>Não há painel. Um <b>script</b> (Firebase Admin SDK, roda local) lê a planilha, gera códigos + <code>guestId</code>s, grava <code>families</code>/<code>guests</code>/<code>codes</code> e <b>imprime a mensagem de WhatsApp pronta por família</b> (link de família + individuais). Disparo automático via WhatsApp Cloud API = SPEC futura opcional.</p>
+  </div>
+
+  <h2>Achados verificados no código <span class="pill crit">contra o tree atual</span></h2>
+  <p>Sweep multi-agente confirmou os problemas e refinou os detalhes:</p>
+  <table>
+    <tr><th>Onde</th><th>Realidade verificada</th></tr>
+    <tr><td><code>checkout/page.tsx:43</code></td><td>Grava <code>status:'completed'</code> sem cobrar; QR é <code>[QR Code Mock]</code>; campos de cartão são <b>mortos</b> (sem state).</td></tr>
+    <tr><td><code>firestore.rules:50-58</code></td><td>Anônimo cria contribuição <code>completed</code> de <b>valor arbitrário</b> (só <code>&gt;0</code>); sem <code>hasOnly</code>, sem <code>donorEmail</code>, sem <code>update</code> só-admin.</td></tr>
+    <tr><td><code>rsvp/[code]/page.tsx:15</code></td><td><code>code</code> ignorado; <code>guestName='Rafael'</code> hardcoded; nenhum lookup nem identidade.</td></tr>
+    <tr><td><code>globals.css</code></td><td><code>--primary-fixed-dim</code> é <b>usado</b> (<code>tailwind.config.ts:18</code> + <code>eventos/page.tsx:244</code>) mas <b>nunca definido</b> → bug de render na timeline.</td></tr>
+    <tr><td><code>page.tsx:294</code> / <code>presentes/gravata</code></td><td>Botão "Dar meu Lance" aponta para rota que <b>não existe</b> → 404 ao vivo. <code>TieLeaderboard</code> 100% mock.</td></tr>
+    <tr><td><code>CathedralIntro.tsx:46</code></td><td><code>eval(import('cdn.jsdelivr...'))</code> — dep de CDN escondida, sem CSP, sem <code>prefers-reduced-motion</code>.</td></tr>
+    <tr><td><code>firebase-applet-config.json</code></td><td><code>apiKey</code> ao vivo <b>commitada</b> e fora do <code>.gitignore</code>; <code>lib/firebase.ts:7</code> ignora o <code>firestoreDatabaseId</code> nomeado.</td></tr>
+  </table>
+
+  <h2>As 8 SPECs &amp; os Sprints</h2>
+  <table>
+    <tr><th>Sprint</th><th>SPECs</th><th>Saída</th></tr>
+    <tr><td><b>0 · Fundação</b></td><td>SPEC-HYGIENE + setup do Emulator + PREFLIGHT do banco</td><td>Build verde, harness pronto, banco confirmado</td></tr>
+    <tr><td><b>1 · Segurança + Motion</b></td><td>SPEC-FIRESTORE-SECURITY ‖ SPEC-MOTION-CSP</td><td>Banco seguro, sem <code>eval</code>, CSP ativa</td></tr>
+    <tr><td><b>2 · Presentes</b></td><td>SPEC-GIFTS-CATALOG + SPEC-CHECKOUT-HONESTY</td><td>Catálogo real e honesto, sem pagamento</td></tr>
+    <tr><td><b>3 · RSVP-First</b></td><td>SPEC-RSVP-AUTH</td><td>RSVP autenticado por código, identidade carimbada</td></tr>
+    <tr><td><b>4 · Pagamento</b></td><td>SPEC-PAYMENTS-MP</td><td>Pix sandbox create→webhook→completed</td></tr>
+    <tr><td><b>5 · Gravata</b></td><td>SPEC-GRAVATA-LEADERBOARD</td><td>Feature completa, leaderboard real, fim do 404</td></tr>
+  </table>
+  <p class="mono" style="color:var(--ink-soft)">Track A (segurança/transação) é sequencial; Track B (HYGIENE → MOTION-CSP) é independente e encaixa nos sprints iniciais. Tudo que toca runtime/DB passa pelo <code>e2e-validation-gate</code>.</p>
+
+  <h2>Dependências &amp; Restrições</h2>
+  <ul>
+    <li><b>Endurecer rules antes dos writers</b> — senão derruba RSVP/checkout em produção; mas migrar os writers logo em seguida.</li>
+    <li><b>Pagamento depende do catálogo</b> (decisão do noivo) e da segurança (só o webhook promove a <code>completed</code>).</li>
+    <li><b>Gravata depende de pagamento + RSVP-Auth</b> (ranking por família precisa de <code>familyId/guestId</code>).</li>
+    <li><b>Webhook do MP exige URL pública</b> → túnel (<code>ngrok</code>) ou preview deploy na verificação.</li>
+    <li><code>domain/types/index.ts</code> é o <b>contrato único de schema</b> — estendido, nunca recriado.</li>
+    <li>Entregável deste ciclo = <b>só o plano</b> (documentação).</li>
+  </ul>
+
+  <h2>Pontos em Aberto (validar na execução)</h2>
+  <div class="card flag">
+    <span class="q">Flag · bloqueante</span>
+    <h3>PREFLIGHT do banco (named vs default) <span class="pill warn">humano</span></h3>
+    <p>Verificar no Firebase Console <b>qual banco</b> tem as coleções/regras antes de tocar em <code>lib/firebase.ts</code> ou nas rules. Mudar às cegas quebra o app.</p>
+  </div>
+  <div class="grid">
+    <div class="card flag"><span class="q">Flag</span><h3>Unidade de <code>amount</code></h3><p>Reais vs centavos — decidir antes da SPEC-PAYMENTS-MP.</p></div>
+    <div class="card flag"><span class="q">Flag</span><h3>Planilhas pendentes</h3><p>Convidados e presentes ainda não existem → tarefa humana, com modelo de colunas definido no plano.</p></div>
+    <div class="card flag"><span class="q">Flag</span><h3>Credenciais MP</h3><p>Indisponíveis → scaffold "modo simulado" até chegarem (via <code>secret-env-refresh</code>).</p></div>
+    <div class="card flag"><span class="q">Flag</span><h3><code>rsvps</code> legados</h3><p>Docs antigos sem <code>familyId</code> → tratar como descartáveis (protótipo) ou migração one-off.</p></div>
+  </div>
+
+  <h2>Próximos Passos Recomendados</h2>
+  <div class="step"><div class="num">1</div><div><b>Sprint 0:</b> rodar SPEC-HYGIENE (corrige o bug de render <code>--primary-fixed-dim</code>), montar o Emulator Suite e fazer o PREFLIGHT do banco no Console.</div></div>
+  <div class="step"><div class="num">2</div><div>Começar a <b>preencher as planilhas</b> (convidados + presentes) em paralelo — destravam os Sprints 2 e 3.</div></div>
+  <div class="step"><div class="num">3</div><div><b>Sprint 1:</b> endurecer <code>firestore.rules</code> (com testes no emulador) e, em paralelo, remover o <code>eval()</code> + CSP. <b>Rotacionar a apiKey</b> exposta.</div></div>
+  <div class="step"><div class="num">4</div><div><b>Sprints 2→5:</b> catálogo honesto → RSVP-First → pagamento MP → Gravata, cada um com <code>e2e-validation-gate</code>.</div></div>
+
+  <hr class="rule" />
+
+  <div class="sign">
+    <div><b>Matheus</b>noivo · admin · product owner<br><span class="mono">decisões travadas via /grill-me</span></div>
+    <div><b>Claude</b>engenharia · análise multi-agente<br><span class="mono">verificado contra o código atual</span></div>
+    <div style="text-align:right"><span class="seal">Acordado em 15 de junho de 2026</span><br><span class="mono">Isadora &amp; Matheus · trilha de engenharia</span></div>
+  </div>
+
+</div>
+</body>
+</html>
