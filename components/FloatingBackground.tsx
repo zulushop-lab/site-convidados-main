@@ -1,10 +1,12 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'motion/react';
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useReducedMotionPreference } from '@/lib/hooks/useReducedMotionPreference';
 
 export function FloatingBackground() {
   const { scrollYProgress } = useScroll();
+  const reducedMotion = useReducedMotionPreference();
   const [mounted, setMounted] = useState(false);
   const [particles, setParticles] = useState<any[]>([]);
 
@@ -32,21 +34,21 @@ export function FloatingBackground() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       {/* Background layer 1 (Slow) */}
-      <motion.div style={{ y: y1 }} className="absolute inset-0">
+      <motion.div style={{ y: reducedMotion ? 0 : y1 }} className="absolute inset-0">
         {particles.slice(0, 10).map((p) => (
           <motion.div
             key={p.id}
-            initial={{ opacity: 0 }}
-            animate={{ 
+            initial={{ opacity: reducedMotion ? p.opacity : 0 }}
+            animate={reducedMotion ? { opacity: p.opacity, y: 0, x: 0 } : {
               opacity: [p.opacity, p.opacity * 1.5, p.opacity],
               y: [0, -20, 0],
-              x: [0, 10, 0]
+              x: [0, 10, 0],
             }}
-            transition={{
+            transition={reducedMotion ? { duration: 0 } : {
               duration: p.duration,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: p.delay
+              delay: p.delay,
             }}
             className="absolute bg-gold/20 rounded-full"
             style={{
@@ -61,21 +63,21 @@ export function FloatingBackground() {
       </motion.div>
 
       {/* Background layer 2 (Faster - Closer) */}
-      <motion.div style={{ y: y2 }} className="absolute inset-0">
+      <motion.div style={{ y: reducedMotion ? 0 : y2 }} className="absolute inset-0">
         {particles.slice(10).map((p) => (
           <motion.div
             key={p.id}
-            initial={{ opacity: 0 }}
-            animate={{ 
+            initial={{ opacity: reducedMotion ? p.opacity : 0 }}
+            animate={reducedMotion ? { opacity: p.opacity, y: 0, x: 0 } : {
               opacity: [p.opacity, p.opacity * 2, p.opacity],
               y: [0, -40, 0],
-              x: [0, -15, 0]
+              x: [0, -15, 0],
             }}
-            transition={{
+            transition={reducedMotion ? { duration: 0 } : {
               duration: p.duration * 0.8,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: p.delay
+              delay: p.delay,
             }}
             className="absolute bg-gold/10 rounded-full"
             style={{

@@ -4,7 +4,7 @@ export function GlobalAudioPlayer() {
   return (
     <audio 
       id="global-intro-audio" 
-      preload="auto" 
+      preload="none"
       src="https://upload.wikimedia.org/wikipedia/commons/1/18/Bach_-_Cello_Suite_No._1_in_G_Major_-_1._Prelude.ogg" 
     />
   );
@@ -44,7 +44,9 @@ export const playGlobalIntroAudio = () => {
             }, 200);
           }, 27000);
         }).catch(error => {
-          console.error("Audio autoplay prevented:", error);
+          if (error?.name !== 'NotAllowedError') {
+            console.warn("Audio playback failed:", error);
+          }
         });
       }
     }

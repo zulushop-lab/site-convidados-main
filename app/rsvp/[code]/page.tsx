@@ -103,7 +103,7 @@ export default function RSVPAuthPage({ params }: { params: Promise<{ code: strin
         >
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat grayscale-[20%]"
-            style={{ backgroundImage: 'url("https://picsum.photos/seed/cathedral/1920/1080")' }} 
+            style={{ backgroundImage: 'url("/catedral-brasilia.png")' }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
         </motion.div>

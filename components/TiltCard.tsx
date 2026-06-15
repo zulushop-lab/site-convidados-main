@@ -1,6 +1,7 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
+import { useReducedMotionPreference } from "@/lib/hooks/useReducedMotionPreference"
 import { cn } from "@/lib/utils"
 
 export interface TiltCardProps {
@@ -25,8 +26,10 @@ export function TiltCard({
   children,
 }: TiltCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotionPreference()
+  const neutralTransform = `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`
   const [transform, setTransform] = useState(
-    `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`
+    neutralTransform
   )
   const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 })
   const [isHovered, setIsHovered] = useState(false)
@@ -35,6 +38,7 @@ export function TiltCard({
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
+      if (reducedMotion) return
       const el = cardRef.current
       if (!el) return
       const rect = el.getBoundingClientRect()
@@ -49,19 +53,25 @@ export function TiltCard({
         setSpotlightPos({ x: px * 100, y: py * 100 })
       }
     },
-    [tiltLimit, scale, perspective, dir, spotlight]
+    [tiltLimit, scale, perspective, dir, spotlight, reducedMotion]
   )
 
   const handlePointerEnter = useCallback(() => {
+    if (reducedMotion) return
     setIsHovered(true)
-  }, [])
+  }, [reducedMotion])
 
   const handlePointerLeave = useCallback(() => {
-    setTransform(
-      `perspective(${perspective}px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`
-    )
+    setTransform(neutralTransform)
     setIsHovered(false)
-  }, [perspective])
+  }, [neutralTransform])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setTransform(neutralTransform)
+      setIsHovered(false)
+    }
+  }, [neutralTransform, reducedMotion])
 
   return (
     <div
@@ -78,7 +88,7 @@ export function TiltCard({
       }}
     >
       {children}
-      {spotlight && isHovered && (
+      {spotlight && isHovered && !reducedMotion && (
         <div
           className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
           style={{ transition: "opacity 0.3s" }}
