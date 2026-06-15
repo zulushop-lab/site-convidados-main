@@ -38,9 +38,9 @@ service cloud.firestore {
     function isValidRSVP(data) {
       return data.familyId is string && isValidId(data.familyId) &&
              data.confirmedBy is string && isValidId(data.confirmedBy) &&
-             data.adults is list &&
-             data.childrenCount is int &&
-             data.childrenCount >= 0 &&
+             data.attendees is list &&
+             data.adults is int && data.adults >= 0 &&
+             data.childrenCount is int && data.childrenCount >= 0 &&
              data.createdAt == request.time;
     }
 
