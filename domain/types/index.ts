@@ -1,4 +1,6 @@
 export type RSVPGuestStatus = 'pending' | 'confirmed' | 'declined';
+export type ContributionStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type ContributionPaymentMethod = 'pix' | 'credit_card';
 
 export interface Family {
   id: string;
@@ -23,6 +25,17 @@ export interface Gift {
   price: number;
   imageUrl: string;
   purchased: boolean;
+}
+
+export interface Contribution {
+  id: string;
+  amount: number; // BRL decimal, ex. 150.00. Client creates only pending records.
+  giftTitle: string;
+  donorName: string;
+  donorEmail: string;
+  paymentMethod: ContributionPaymentMethod;
+  status: ContributionStatus;
+  createdAt: number;
 }
 
 export interface TieBid {

@@ -120,10 +120,6 @@ export default function PresencaPage() {
                   Presença Confirmada para {adults.filter(a => a.confirmed).length + childrenCount} Convidados
                 </p>
               </div>
-              <div className="bg-surface-container-low p-6 border-l-2 border-outline-variant">
-                <p className="font-label text-[10px] uppercase tracking-[0.2rem] text-outline mb-1">Contribuição de Presente</p>
-                <p className="font-body text-on-surface font-semibold">Cotas de Lua de Mel — Finalizada</p>
-              </div>
             </motion.div>
             {/* Actions */}
             <motion.div 
