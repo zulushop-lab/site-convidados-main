@@ -20,6 +20,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname),
   async headers() {
+    // A CSP rigida (sem 'unsafe-eval') so e emitida em producao. Em desenvolvimento
+    // o Fast Refresh do Next (react-refresh-utils) usa eval(), que a CSP bloquearia,
+    // deixando o app em tela branca. Producao nao usa eval, entao a CSP estrita vale la.
+    if (process.env.NODE_ENV !== 'production') {
+      return [];
+    }
+
     return [
       {
         source: '/(.*)',
