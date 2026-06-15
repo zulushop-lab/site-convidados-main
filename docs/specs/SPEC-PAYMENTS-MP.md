@@ -195,3 +195,27 @@ Pipeline crítico: `checkout (cliente) → POST /api/pix (Admin SDK cria 'pendin
 - **CSP bloqueando o Brick:** quando SPEC-MOTION-CSP adicionar CSP, `script-src` precisa liberar `https://sdk.mercadopago.com`. **Mitigação:** documentar o requisito (RT-7) e coordenar com SPEC-MOTION-CSP.
 - **Expiração do Pix vs. polling:** Pix dinâmico expira (~10–30 min). **Mitigação:** timeout de polling alinhado à validade + estado de UI "expirado, gerar novo".
 - **Ausência de credenciais bloqueia entrega:** **Mitigação central:** modo simulado (RT-9) entrega scaffold funcional e honesto agora; ligar é trocar env + cadastrar webhook.
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | Rotas server-side existem (RT-3/4/5, Critério "Existe app/api/...") | `ls app/api/pix/route.ts app/api/webhook/mercadopago/route.ts app/api/payments/[contributionId]/status/route.ts` | os 3 arquivos existem (exit 0) |
+| M-2 | Rotas de API usam runtime Node.js (RT-3/4/5) | `rg -l "runtime\s*=\s*['\"]nodejs['\"]" app/api/pix/route.ts app/api/webhook/mercadopago/route.ts app/api/payments/` | os 3 route handlers declaram `runtime = 'nodejs'` |
+| M-3 | Módulos sensíveis são server-only (RT-1/2/11) | `rg -n "import 'server-only'" lib/server/mercadopago.ts lib/server/firebaseAdmin.ts` | retorna >=1 em cada arquivo (2 ocorrências no total) |
+| M-4 | Nenhum segredo de servidor em `NEXT_PUBLIC_*` (RT-1/11, Critério "Nenhum segredo vazado") | `rg -n "NEXT_PUBLIC_(MP_ACCESS_TOKEN\|MP_WEBHOOK_SECRET\|FIREBASE_SERVICE_ACCOUNT)" .` | retorna 0 linhas |
+| M-5 | Cliente nunca grava status promovido (RT-8, Critério "Cliente NUNCA grava processing/completed/failed") | `rg -n "status:\s*['\"](processing\|completed\|failed)['\"]" app/presentes/` | retorna 0 ocorrências |
+| M-6 | Mock de pagamento removido do checkout (RT-6, Critério "QR real substitui o mock / sem setTimeout fingindo sucesso") | `rg -n "QR Code Mock\|setTimeout\(.*1500" app/presentes/checkout/page.tsx` | retorna 0 ocorrências |
+| M-7 | ENUM de 4 estados definido no contrato (RT-8, Critério "status segue o ENUM") | `rg -n "type ContributionStatus = 'pending' \| 'processing' \| 'completed' \| 'failed'" domain/types/index.ts` | retorna >=1 linha |
+| M-8 | Interface `Contribution` exposta no contrato (RT-8) | `rg -n "export interface Contribution\b" domain/types/index.ts` | retorna >=1 linha |
+| M-9 | Env placeholders adicionadas (RT-9) | `rg -n "MP_ACCESS_TOKEN\|MP_WEBHOOK_SECRET\|NEXT_PUBLIC_MP_PUBLIC_KEY\|MP_WEBHOOK_URL\|FIREBASE_DATABASE_ID" .env.example \| wc -l` | retorna >=5 (todas as envs novas presentes) |
+| M-10 | `databaseId` parametrizado, não hardcodado (RT-2, decisão nº 11) | `rg -n "FIREBASE_DATABASE_ID" lib/server/firebaseAdmin.ts` retorna >=1 **e** `rg -n "ai-studio-remixmatheusisad" lib/server/firebaseAdmin.ts` retorna 0 | parametrizado via env e sem hardcode |
+| M-11 | Modo simulado loga e degrada (RT-9, Critério "Sem chaves... loga modo simulado") | `rg -n "\[MP\] modo simulado" app/api/pix/route.ts` | retorna >=1 linha |
+| M-12 | Webhook é a única rota que promove a `completed` (RT-4/11, Critério "Webhook é a única rota que promove status") | `rg -rn "status:\s*['\"]completed['\"]" app/api/ \| rg -v "app/api/webhook/"` | retorna 0 ocorrências |
+| M-13 | ADR-0001 não cita mais PagSeguro e cita Mercado Pago (RT-10, Critério "ADR-0001...") | `rg -ni "pagseguro" docs/adr/0001-fluxos-checkout-separados.md` retorna 0 **e** `rg -ni "mercado pago" docs/adr/0001-fluxos-checkout-separados.md` retorna >=1 | sem PagSeguro e com Mercado Pago |
+| M-14 | `.gitignore` cobre segredos (RT-11, Critério "`.env*`/service account no `.gitignore`") | `rg -n "\.env" .gitignore` retorna >=1 **e** `rg -n "serviceAccount" .gitignore` retorna >=1 | ambas as entradas presentes |
+| M-15 | Deps adicionadas (RT-1/2, §6 package.json) | `rg -n "\"mercadopago\"" package.json` retorna >=1 **e** `rg -n "\"firebase-admin\"" package.json` retorna >=1 | ambas as deps declaradas |
+| M-16 | Build passa no estado scaffolded/modo simulado (Critério "`npm run build` passa") | `npm run build` | exit code 0 |
+| M-17 | [humano] Fluxo sandbox e2e `create → webhook → completed` (Critério "Com chaves de sandbox...") + idempotência (reentrega não regride) + assinatura inválida → 401 | Executar §8 (validação e2e) com chaves de sandbox: pagar/simular webhook assinado, reenviar mesmo webhook, enviar `x-signature` inválida; conferir Firestore/console admin e UI via polling | doc promovido a `completed`, reentrega mantém `completed`, webhook inválido responde 401 sem mudar status, UI sai de "aguardando" para "sucesso" |
+| M-18 | [humano] Preflight de databaseId (RT-2, decisão nº 11) | Confirmar no Firebase Console se coleções/rules estão no banco `default` ou no nomeado e definir `FIREBASE_DATABASE_ID` coerente antes do webhook escrever | banco do Admin SDK == banco do cliente (status visível ao admin) |

@@ -130,3 +130,25 @@ Esta spec toca runtime user-visível e estado persistente (`contributions`/`rsvp
 - **Risco: dessincronização com SPEC-FIRESTORE-SECURITY** (writer manda `pending` mas rules ainda aceitam `completed`, ou rules endurecem antes e quebram outro writer). Mitigação: tratar a ordem como dependência explícita (§9); validar no e2e que o write `pending` passa nas rules vigentes.
 - **Risco: regressão na tela de sucesso do RSVP** ao remover o card (quebra de layout do grid de status cards). Mitigação: remover só o segundo card (`l.123-126`), preservar o primeiro e o espaçamento `space-y-4`; validar visualmente no e2e.
 - **Risco: contribuições `pending` órfãs acumulando** sem nunca virar `completed` (até a SPEC-PAYMENTS-MP). Mitigação: aceito conscientemente — é a verdade honesta do estado "intenção registrada, pagamento não processado"; SPEC-PAYMENTS-MP fará a promoção via webhook. Opcional: nota administrativa de que `pending` antigos são intenções não pagas.
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | Cliente não grava status fora de `'pending'` (RT-1, aceite §7.1) | `rg -n "status:\s*'(completed\|processing\|failed)'" app/presentes/checkout/page.tsx` | 0 ocorrências |
+| M-2 | Writer de `contributions` grava `'pending'` (RT-1) | `rg -n "status:\s*'pending'" app/presentes/checkout/page.tsx` | >=1 ocorrência |
+| M-3 | Simulação de processamento removida (RT-2, aceite §7.3) | `rg -n "setTimeout\(\s*resolve\s*,\s*1500" app/presentes/checkout/page.tsx` (ou `rg -n "setTimeout" app/presentes/checkout/page.tsx`) | 0 ocorrências |
+| M-4 | Copy de sucesso não afirma pagamento confirmado (RT-3, aceite §7.2/§7.10) | `rg -ni "confirmada com sucesso\|pagamento confirmado" app/presentes/checkout/page.tsx` | 0 ocorrências |
+| M-5 | Copy honesta de intenção pendente presente (RT-3) | `rg -n "Recebemos sua intenção de presente" app/presentes/checkout/page.tsx` | >=1 ocorrência |
+| M-6 | Botão Pix não afirma "já paguei" (RT-4, aceite §7.4) | `rg -n "Já realizei o pagamento" app/presentes/checkout/page.tsx` | 0 ocorrências |
+| M-7 | Bloco Pix sinaliza placeholder/simulado (RT-4) | `rg -ni "modo simulado\|em breve\|placeholder" app/presentes/checkout/page.tsx` | >=1 ocorrência |
+| M-8 | Inputs de cartão sem `required` órfão e desabilitados (RT-5, aceite §7.5) | `rg -n "id=\"cc-(number\|name\|exp\|csc)\"" app/presentes/checkout/page.tsx` e inspecionar cada match — nenhum contém `required`; cada um contém `disabled` | nenhum input `cc-*` com `required`; todos com `disabled` |
+| M-9 | Card fake de presente removido de /presenca (RT-6, aceite §7.6) | `rg -ni "Cotas de Lua de Mel\|Contribuição de Presente" app/presenca/page.tsx` | 0 ocorrências |
+| M-10 | Card real "Status da Confirmação" preservado em /presenca (RT-6) | `rg -n "Status da Confirmação" app/presenca/page.tsx` | >=1 ocorrência |
+| M-11 | Nenhuma menção a provedor != Mercado Pago na UI do checkout (RT-7, aceite §7.7) | `rg -ni "PagSeguro\|PayPal\|Stripe\|PagBank" app/presentes/checkout/page.tsx` | 0 ocorrências |
+| M-12 | ADR-0001 atualizado (RT-8, aceite §7.8) | `rg -ni "PagSeguro" docs/adr/0001-fluxos-checkout-separados.md` retorna 0 **e** `rg -ni "Mercado Pago" docs/adr/0001-fluxos-checkout-separados.md` retorna >=1 | PagSeguro=0 e Mercado Pago>=1 |
+| M-13 | Tipo `Contribution` exportado e tipado (RT-9, aceite §7.9 — se aplicado) | `rg -n "export (interface\|type) Contribution\b\|export type ContributionStatus" domain/types/index.ts` | >=1 (ou marcar N/A se RT-9 não aplicado) |
+| M-14 | Build/lint sem novos erros (aceite §7.11, RT-10) | `npm run build` | exit code 0 |
+| M-15 | [humano] Status `'pending'` real no documento criado (validação e2e §8, RT-1) | Criar contribuição via `/presentes/checkout?amount=10,00&item=Teste` e inspecionar o doc em `contributions` no Firebase Console/emulador | doc gravado com `status: 'pending'` |
+| M-16 | [humano] Auditoria visual de honestidade (aceite §7.12, RT-3/RT-4/RT-5) | Abrir checkout e /presenca: nenhuma tela afirma pagamento ou presente que não aconteceu; cartão visualmente "em breve"; Pix em modo simulado | confirmação visual humana |

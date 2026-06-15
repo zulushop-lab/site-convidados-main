@@ -193,3 +193,29 @@ Esta spec toca runtime user-visível, estado persistente (`tieBids`/`leaderboard
 - **Risco: 404 persistir** se o `href` da Home não casar com o nome do arquivo de rota. *Mitigação:* RT-9 exige checagem explícita de 200; manter exatamente `/presentes/gravata`.
 - **Risco: desalinhamento de status com o resto do sistema** (`TieBid` usava `'paid'`). *Mitigação:* RT-2 realinha ao ENUM travado e remove `'paid'`; grep de aceite garante zero referências remanescentes.
 - **Risco: dependência de infra de Functions inexistente.** *Mitigação:* agregação só vai a produção junto/depois de SPEC-PAYMENTS-MP; em modo simulado, leaderboard mostra apenas o que já está `'completed'` (possivelmente vazio), de forma honesta.
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | Rota `/presentes/gravata` existe (mata o 404 do `app/page.tsx:294`) — RT-1, RT-9 | `test -f app/presentes/gravata/page.tsx; echo $?` | sai `0` (arquivo existe) |
+| M-2 | Página é client component no padrão do projeto — RT-1 | `rg -n "^'use client'" app/presentes/gravata/page.tsx` | retorna `>=1` linha |
+| M-3 | ENUM `TieBidStatus` travado exportado e usado em `TieBid` — RT-2, AC §7 | `rg -n "export type TieBidStatus = 'pending' \| 'processing' \| 'completed' \| 'failed'" domain/types/index.ts` e `rg -n "status: TieBidStatus" domain/types/index.ts` | ambos retornam `>=1` linha |
+| M-4 | Status `'paid'` eliminado de todo o código — RT-2, AC §7, risco §10 | `rg -n "'paid'" app/ components/ domain/ lib/ functions/` | retorna `0` ocorrências |
+| M-5 | Cliente nunca grava status promovido (writer do lance cria só `'pending'`) — RT-4, AC §7 | `rg -n "status:\s*'(processing\|completed\|failed)'" app/presentes/gravata/page.tsx` | retorna `0` ocorrências |
+| M-6 | Writer do lance cria com `status: 'pending'` — RT-4 | `rg -n "status:\s*'pending'" app/presentes/gravata/page.tsx` | retorna `>=1` ocorrência |
+| M-7 | Tratamento de erro de escrita reusa o padrão do projeto — RT-4 | `rg -n "handleFirestoreError\(.*OperationType\.CREATE.*'tieBids'\)" app/presentes/gravata/page.tsx` | retorna `>=1` ocorrência |
+| M-8 | `firestore.rules` tem bloco `tieBids` com create-pending/update-admin — RT-5, AC §7 | `rg -n "match /tieBids/\{" firestore.rules` e `rg -n "function isValidTieBid" firestore.rules` e `rg -n "allow update: if isAdmin\(\)" firestore.rules` | os três retornam `>=1` linha |
+| M-9 | `firestore.rules` tem bloco `leaderboards` write-admin-only — RT-5, RT-7, AC §7 | `rg -n "match /leaderboards/" firestore.rules` | retorna `>=1` linha |
+| M-10 | Rule de `tieBids` valida `amount > 0`, `status == 'pending'` e `createdAt == request.time` — RT-5 | `rg -n "data.amount > 0" firestore.rules` e `rg -n "data.status == 'pending'" firestore.rules` e `rg -n "data.createdAt == request.time" firestore.rules` | os três retornam `>=1` linha |
+| M-11 | Rule bloqueia cliente forjando `completed` (teste de emulador) — RT-5, AC §7, risco §10 | teste `@firebase/rules-unit-testing`: `create` em `tieBids` com `status:'completed'` por usuário assinado → `assertFails`; `create` com `status:'pending'` válido → `assertSucceeds` | ambas as asserções passam (PASS) |
+| M-12 | Mocks removidos do `TieLeaderboard` — RT-6, AC §7 | `rg -n "mockFamilyData\|mockIndividualData" components/TieLeaderboard.tsx` | retorna `0` ocorrências |
+| M-13 | `TieLeaderboard` lê fonte real de agregados (`leaderboards/*`) — RT-6, RT-7 | `rg -n "leaderboards" components/TieLeaderboard.tsx` | retorna `>=1` ocorrência |
+| M-14 | Estado vazio honesto quando não há lances `completed` — RT-6, AC §7 | `rg -n "Seja o primeiro a dar um lance" components/TieLeaderboard.tsx` | retorna `>=1` ocorrência |
+| M-15 | `domain/types/index.ts` deixa de ser órfão (importado pelo leaderboard/página) — RT-2, AC §7 | `rg -n "from ['\"].*domain/types" components/TieLeaderboard.tsx app/presentes/gravata/page.tsx` | retorna `>=1` ocorrência |
+| M-16 | Build/lint passa sem novos erros — AC §7, e2e §8 | `npm run build` | sai com código `0` |
+| M-17 | Agregação derivada é idempotente (re-processar o mesmo bid não dobra o total) — RT-7, AC §7, risco §10 | teste no emulador: promover bid de teste a `'completed'` e re-disparar o webhook para o mesmo bid → `total` em `leaderboards/family` e `leaderboards/individual` permanece igual após a 2ª chamada | total não muda entre 1ª e 2ª chamada (assertEqual PASS) |
+| M-18 | ADR-0004 concretizado (webhook + ranking duplo + rank dinâmico + nomes cacheados) — RT-10, AC §7 | `rg -ni "webhook" docs/adr/0004-ranking-gravata-familia.md` e `rg -ni "leaderboards" docs/adr/0004-ranking-gravata-familia.md` | ambos retornam `>=1` linha |
+| M-19 | [humano] Rota responde HTTP 200 e botão "Dar meu Lance" não dá 404 — RT-9, AC §7 | `npm run dev` e abrir `/presentes/gravata`; clicar o CTA na Home; observar status 200 e ausência de `not-found` | navegação retorna 200, sem 404 (verificação humana) |
+| M-20 | [humano] Upsell pós-pagamento e leaderboard com copy honesta de status — RT-8, AC §7 | inspeção visual da tela de agradecimento/upsell em modo simulado: não afirma "pago"/"vencedor" com bid `pending` | copy honesta confirmada (verificação humana) |

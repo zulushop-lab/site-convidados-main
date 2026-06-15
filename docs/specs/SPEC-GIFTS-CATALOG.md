@@ -172,3 +172,24 @@ Cobertura mínima adicional: `npm run build` verde.
 - **Drift de contrato (UI usa `imageSrc`, contrato usa `imageUrl`):** Mitigação: RT-7 padroniza um único campo; `domain/types` é a fonte da verdade e o cliente importa de lá.
 - **Quebra do link de checkout:** se o novo shape perder `valor_cota`/`title`, os links de `app/presentes/page.tsx:697,955` quebram. Mitigação: RT-8 mantém ambos no contrato; coberto pelo e2e (passo 3c).
 - **Catálogo vazio percebido como bug:** ao parar o seed automático, o app pode parecer "sem presentes" até rodar `seed:gifts`. Mitigação: estado vazio honesto (RT-6) + tarefa humana de preencher a planilha e rodar o seed.
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | Contrato `GiftCategory` exportado e sem `'Todas'` nos dados (RT-2) | `rg -n "export type GiftCategory" domain/types/index.ts` e `rg -n "'Todas'" domain/types/index.ts` | 1ª ≥1 linha E 2ª = 0 linhas |
+| M-2 | Contrato `Gift` estendido com os campos reais; sem `purchased` órfão (RT-1) | `rg -n "category|preco_total|cotas_disponiveis|valor_cota|isBought" domain/types/index.ts` e `rg -n "purchased" domain/types/index.ts` | 1ª ≥5 ocorrências (os 5 campos) E 2ª = 0 linhas |
+| M-3 | Cliente não importa nem usa escrita do Firestore (RT-3, aceite) | `rg -n "setDoc|seedGifts" app/presentes/page.tsx` | 0 ocorrências |
+| M-4 | Sem `interface Gift`/`type GiftCategory` local no cliente; tipos vêm do contrato (RT-2, aceite) | `rg -n "interface Gift|type GiftCategory" app/presentes/page.tsx` e `rg -n "from .*domain/types" app/presentes/page.tsx` | 1ª = 0 linhas E 2ª ≥1 linha |
+| M-5 | Re-semeadura por divergência de contagem removida (RT-4, aceite) | `rg -n "DEFAULT_GIFTS.length\|querySnapshot.size !==" app/presentes/page.tsx` | 0 ocorrências |
+| M-6 | `DEFAULT_GIFTS` não é mais fonte de dados no cliente; movido para o seed (RT-6) | `rg -n "DEFAULT_GIFTS" app/presentes/page.tsx` (alvo) e existência de `scripts/seed/gifts.example.json` | 1ª = 0 ocorrências E arquivo de seed existe |
+| M-7 | Spinner sempre desliga: `setIsLoading(false)` no `finally`, sem `return`/recursão órfãos (RT-5, aceite) | `rg -n "finally" app/presentes/page.tsx` (presente no `fetchGifts`) e `rg -n "setIsLoading\(false\)" app/presentes/page.tsx` | `finally` ≥1 E `setIsLoading(false)` ≥1, com o reset dentro do `finally` |
+| M-8 | Contrato de navegação catálogo→checkout preservado (RT-8, aceite) | `rg -n "amount=" app/presentes/page.tsx` e `rg -n "encodeURIComponent" app/presentes/page.tsx` | ambas ≥1 ocorrência (links com `amount`/`item` mantidos) |
+| M-9 | Script admin `seed:gifts` existe e é idempotente com flags exigidas (RT-9) | existência de `scripts/seed-gifts.ts` (ou `.mjs`) E `rg -n "\-\-dry-run\|--prune\|merge" scripts/seed-gifts.*` | arquivo existe E ≥3 ocorrências (dry-run, prune e merge presentes) |
+| M-10 | `--prune` nunca é default no script (RT-9, risco) | inspeção: `rg -n "prune" scripts/seed-gifts.*` mostra `prune` ativado SOMENTE quando a flag é passada (default `false`) | nenhum caminho deleta sem `--prune` explícito |
+| M-11 | Script registrado no `package.json` e `firebase-admin` em devDependencies (RT-10) | `rg -n "\"seed:gifts\"" package.json` e `rg -n "firebase-admin" package.json` | ambas ≥1 ocorrência |
+| M-12 | Service account do Admin SDK ignorada pelo git (RT-9, Tarefas humanas) | `rg -n "serviceAccount\|GOOGLE_APPLICATION_CREDENTIALS\|\\.json" .gitignore` (entrada que cubra a chave) | ≥1 entrada ignorando a credencial JSON |
+| M-13 | Build/types passam sem erro (aceite) | `npm run build` | exit code 0 |
+| M-14 | [humano] Documento gravado pelo script passa em `isValidGift` e write anônimo é negado (RT-12, aceite, e2e passo 5) | teste `@firebase/rules-unit-testing` (ou tentativa no console): create admin de `gift` válido → `assertSucceeds`; create anônimo em `gifts` → `assertFails`/permission-denied | PASS = admin grava E anônimo é negado |
+| M-15 | [humano] Catálogo vazio mostra estado "em preparação" e idempotência do seed visível (RT-6, aceite, e2e passos 2 e 5) | rodar `npm run seed:gifts` 2x (saída "0 criados / 0 atualizados / N inalterados") e abrir `/presentes` com coleção vazia | PASS = 2ª execução sem mudanças E estado vazio honesto exibido (sem dados fake) |

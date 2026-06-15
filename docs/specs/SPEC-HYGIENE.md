@@ -110,3 +110,23 @@ Esta spec é estática/build-time (não toca DB nem fluxo transacional), então 
 - **Risco: lockfile dessincronizado** após editar `package.json` à mão. Mitigação: rodar `npm install` e commitar `package-lock.json` junto; CI/`npm ci` deve passar.
 - **Risco: invadir a trilha de design** introduzindo tokens novos do DESIGN.md v2. Mitigação: escopo restringe a UM token (o fantasma já referenciado em código); qualquer outro token novo é rejeitado em review e fica para o ciclo de design.
 - **Risco: `DESIGN.md` fica desatualizado** (afirma que o token já estava definido). Mitigação: não corrigir aqui (DESIGN.md é da trilha de design), mas anotar a divergência no PR para o ciclo de design acertar a redação (`DESIGN.md:285`).
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | RT-1 — token `--primary-fixed-dim` declarado em light + dark | `rg -n "^\s*--primary-fixed-dim:\s*\d+,\s*\d+,\s*\d+;" app/globals.css` | retorna >= 2 linhas (uma em `:root`, uma em `.dark`) |
+| M-2 | RT-1 — token está no formato RGB sem `rgb()` (consistente com a família) | `rg -n "\-\-primary-fixed-dim:\s*rgb\(" app/globals.css` | retorna 0 linhas |
+| M-3 | RT-3 — componentes órfãos removidos do disco | `test ! -e components/CardTeaser.tsx && test ! -e components/ThemeToggle.tsx && test ! -e components/NavigationThemeToggle.tsx; echo $?` | imprime `0` (os 3 arquivos não existem) |
+| M-4 | RT-2/RT-3 — zero referência aos componentes removidos em `app/**` e `components/**` | `rg -n "CardTeaser\|NavigationThemeToggle\|from ['\"].*components/ThemeToggle['\"]\|from ['\"]\./ThemeToggle['\"]" app components` | retorna 0 linhas |
+| M-5 | RT-3 — `components/Navigation.tsx` preservado e com seu `ThemeToggle` local vivo | `test -e components/Navigation.tsx && rg -n "ThemeToggle" components/Navigation.tsx` | arquivo existe e retorna >= 1 linha |
+| M-6 | RT-4 — deps fantasma removidas de `package.json` | `rg -n "@google/genai\|@hookform/resolvers" package.json` | retorna 0 linhas |
+| M-7 | RT-4 — deps fantasma ausentes do lockfile resolvido | `npm ls @google/genai @hookform/resolvers` (após `npm install`) | sai indicando "(empty)"/"not found" — nenhum pacote instalado |
+| M-8 | RT-5 — fontes mortas removidas de código e config | `rg -n "Newsreader\|Zeyada\|font-newsreader\|font-zeyada\|--font-newsreader\|--font-zeyada\|newsreader\|zeyada" app components tailwind.config.ts` | retorna 0 linhas |
+| M-9 | RT-5 — fontes vivas preservadas | `rg -n "playfair\|alex-brush\|montserrat\|cormorant" tailwind.config.ts` | retorna >= 4 linhas |
+| M-10 | RT-6 — CSS morto `.liquid-glass` removido; `.wedding-glass` preservado | `rg -n "\.liquid-glass" app/globals.css` retorna 0 **e** `rg -n "\.wedding-glass" app/globals.css` retorna >= 1 | ambas as condições verdadeiras |
+| M-11 | RT-7 — typos corrigidos em `app/presentes/page.tsx` | `rg -n "descatologados\|Refechar modal" app/presentes/page.tsx` retorna 0 **e** `rg -n "restantes\|aria-label=\"Fechar modal\"" app/presentes/page.tsx` retorna >= 2 | typos ausentes e textos corretos presentes |
+| M-12 | RT-8 — identidade AI Studio eliminada | `rg -n -i "ai-studio\|AI Studio\|GEMINI_API_KEY" package.json README.md .env.example` | retorna 0 linhas |
+| M-13 | RT-8 — `name` do projeto corrigido | `rg -n "\"name\":\s*\"site-convidados\"" package.json` | retorna >= 1 linha |
+| M-14 | RT-9 — build limpo | `npm run build` | sai com código 0 (sem erros) |

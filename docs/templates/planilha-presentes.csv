@@ -1,0 +1,5 @@
+id,nome,descricao,categoria,foto_url,preco_total,cotas,valor_cota,ordem
+exemplo-lua-de-mel,Lua de Mel em Paris,Ajude a realizar a viagem dos nossos sonhos,Lua de Mel,/imagem-1.jpg,5000,50,100,1
+exemplo-jantar,Jantar Romântico,Um jantar especial só nosso na praia,Experiências,/imagem-2.jpg,300,1,300,2
+exemplo-panelas,Jogo de Panelas,Para os banquetes do dia a dia em casa,Cozinha,/imagem-3.jpg,800,8,100,3
+exemplo-geladeira,Geladeira Nova,Cota para a geladeira da casa nova,Eletrodomésticos,/imagem-1.jpg,4000,40,100,4

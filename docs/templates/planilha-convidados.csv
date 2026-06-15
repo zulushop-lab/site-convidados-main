@@ -1,0 +1,7 @@
+id_familia,nome_familia,telefone_whatsapp,nome_convidado,e_crianca,e_responsavel_familia,email,observacoes
+exemplo-silva,Família Silva,+5511999990001,João Silva,nao,sim,joao@email.com,
+exemplo-silva,Família Silva,+5511999990001,Maria Silva,nao,nao,,
+exemplo-silva,Família Silva,+5511999990001,Pedro Silva,sim,nao,,Alergia a amendoim
+exemplo-souza,Família Souza,+5511999990002,Ana Souza,nao,sim,ana.souza@email.com,
+exemplo-souza,Família Souza,+5511999990002,Carlos Souza,nao,nao,,Cadeirante - mesa acessível
+exemplo-prado,Roberto Prado,+5511999990003,Roberto Prado,nao,sim,,Convidado individual

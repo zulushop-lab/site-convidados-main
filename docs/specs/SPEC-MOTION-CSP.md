@@ -135,3 +135,23 @@ Esta spec toca runtime user-visível e config de segurança (CSP), então passa 
 - **Remover picsum sem trocar o runtime quebra o RSVP.** O uso é via `background-image` CSS, não `next/image`. Mitigar: RT-7 obrigatório antes/junto de RT-6; CSP `img-src` cobre o asset local (`'self'`).
 - **Regressão estética nas intros.** Refator do SVG pode alterar visual. Mitigar: comparação visual lado a lado com reduced-motion=off (critério de aceite) antes de mergear.
 - **grain remoto `grainy-gradients` (DESIGN.md:372) sob a nova CSP.** Se houver fetch de grain remoto, a CSP pode bloqueá-lo. Mitigar: durante o report-only, mapear; padronizar para `NoiseOverlay` inline (fora do escopo de implementação, mas registrar como achado).
+
+## 11. Metas auditáveis (Definition of Done verificável por LLM)
+> Objetivos quantitativos. Cada meta tem um método de auditoria executável e um alvo binário (PASS/FAIL). Uma LLM executora deve rodar a auditoria e reportar o resultado sem julgamento subjetivo. **SPEC entregue ⇔ todas as metas não-[humano] = PASS.** Os comandos assumem a raiz do repositório como diretório de trabalho.
+
+| # | Meta (objetivo) | Como auditar (comando / checagem) | Alvo (PASS) |
+|---|---|---|---|
+| M-1 | Eliminar `eval(` do código de animação (RT-2, Critério de aceite) | `rg -n "eval\(" components/` | retorna 0 linhas |
+| M-2 | Eliminar qualquer literal de CDN jsdelivr no código-fonte (RT-2, RT-5, Critério de aceite) | `rg -n "cdn\.jsdelivr\.net" app/ components/ lib/ next.config.ts` | retorna 0 linhas |
+| M-3 | Versionar `three` e `threejs-components` em `package.json` (RT-1) | `rg -n "\"three\"" package.json` e `rg -n "\"threejs-components\"" package.json` | cada um retorna >=1 linha em `dependencies` |
+| M-4 | Resolver deps de animação no lockfile sem erro (RT-1, Critério de aceite) | `npm ls three threejs-components` | sai com código 0 (sem `UNMET DEPENDENCY`/erro) |
+| M-5 | Build de produção passa (Critério de aceite, e2e) | `npm run build` | sai com código 0 |
+| M-6 | Componente SVG compartilhado criado (RT-3, Critério de aceite) | `test -f components/CathedralSVG.tsx` (arquivo existe) | exit code 0 |
+| M-7 | SVG inline duplicado removido das duas intros (RT-4, Critério de aceite) | `rg -n "<CathedralSVG" components/CathedralIntro.tsx components/IntroAnimation.tsx` retorna >=2; `rg -c "finalGlow" components/CathedralIntro.tsx components/IntroAnimation.tsx` (contagem do markup de filtro original nos wrappers) | `<CathedralSVG` >=2 ocorrências (1 por intro) **e** o markup `<defs>`/`finalGlow` não consta mais nos dois wrappers (0) |
+| M-8 | IDs de filtro/gradiente únicos por instância (RT-3) | `rg -n "useId\(" components/CathedralSVG.tsx` | retorna >=1 linha |
+| M-9 | CSP emitida via `headers()` sem `unsafe-eval` (RT-5, Critério de aceite) | `rg -n "Content-Security-Policy" next.config.ts` retorna >=1 **e** `rg -n "unsafe-eval" next.config.ts` retorna 0 | ambas as condições verdadeiras |
+| M-10 | CSP não libera jsdelivr em `script-src` (RT-5) | `rg -n "jsdelivr" next.config.ts` | retorna 0 linhas |
+| M-11 | `picsum.photos` removido de `remotePatterns` e de uso runtime (RT-6, RT-7, Critério de aceite) | `rg -n "picsum" app/ components/ next.config.ts` | retorna 0 linhas |
+| M-12 | Background do RSVP usa asset local em vez de URL remota (RT-7) | `rg -n "backgroundImage" app/rsvp/\[code\]/page.tsx` não casa com `https?://`; aponta para asset local (ex.: `/catedral-brasilia.png`) ou gradiente | 0 ocorrências de `backgroundImage` com URL `http` |
+| M-13 | Tier reduced-motion aplicado nos componentes-alvo via API canônica (RT-8, RT-9, RT-10, RT-11, Critério de aceite) | `rg -n "useReducedMotion" components/CathedralSVG.tsx components/CathedralIntro.tsx components/IntroAnimation.tsx components/FloatingBackground.tsx components/TiltCard.tsx` | `useReducedMotion` presente em cada um dos 5 arquivos (>=5 arquivos com match) |
+| M-14 | [humano] Sem violação de CSP no fluxo e visual sem regressão (RT-5, RT-8, Critérios de aceite) | Abrir home + intro + RSVP + presentes com DevTools; confirmar Console sem violações de CSP; emular `prefers-reduced-motion: reduce` e verificar que partículas/parallax/tilt/beams param e conteúdo permanece visível; comparar intros com reduced-motion=off lado a lado vs. baseline | Console limpo de violações de CSP; reduced-motion degrada animações sem esconder conteúdo; sem regressão estética |
