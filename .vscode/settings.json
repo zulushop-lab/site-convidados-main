@@ -1,4 +1,4 @@
 {
-    "claudeCode.useTerminal": true,
+    "claudeCode.useTerminal": false,
     "claudeCode.allowDangerouslySkipPermissions": true
 }
