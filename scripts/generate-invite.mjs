@@ -9,7 +9,7 @@
  * ao CTA (ponto focal). Catedral aquarela integrada ao fundo dá atmosfera.
  *
  * Requer (instalar JUNTOS — npm --no-save reconcilia e remove um se separado):
- *   npm i --no-save qrcode sharp
+ *   npm i --no-save sharp
  *
  * Uso:
  *   node scripts/generate-invite.mjs <CODE> <NomeFamilia> [host] [textoDoBotao]
@@ -19,12 +19,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 // --- Dependências (mensagem clara se faltar) ---
-let QRCode, sharp;
+let sharp;
 try {
-  QRCode = (await import("qrcode")).default;
   sharp = (await import("sharp")).default;
 } catch {
-  console.error("\n❌ Dependências ausentes. Instale JUNTOS:\n   npm i --no-save qrcode sharp\n");
+  console.error("\n❌ Dependência ausente. Instale:\n   npm i --no-save sharp\n");
   process.exit(1);
 }
 
@@ -33,7 +32,7 @@ const [, , codeArg, nameArg, hostArg, buttonArg] = process.argv;
 const code = codeArg || "EDRQ7ZSH";
 const familyName = nameArg || "Matheus & Isadora";
 const host = (hostArg || "https://site-convidados-main.vercel.app").replace(/\/$/, "");
-const buttonText = buttonArg || "Confirmar Presença";
+const buttonText = buttonArg || "Confirme sua presença e conheça nosso site";
 const rsvpUrl = `${host}/rsvp/${code}`;
 
 // --- Conteúdo do evento (igual para todas as famílias) ---
@@ -58,7 +57,7 @@ function toDataUrl(relPath, mime = "image/png") {
 const cathedralSmall = "scripts/.cathedral-small.png";
 if (!fs.existsSync(path.join(process.cwd(), cathedralSmall))) {
   await sharp("public/catedral-brasilia.png")
-    .resize(1100)
+    .resize(1400)
     .png({ compressionLevel: 9 })
     .toFile(path.join(process.cwd(), cathedralSmall));
 }
@@ -66,12 +65,29 @@ if (!fs.existsSync(path.join(process.cwd(), cathedralSmall))) {
 const monogram = toDataUrl("public/matheus-isadora-monogram_gold_trim.png");
 const cathedral = toDataUrl(cathedralSmall);
 
-const qrDataUrl = await QRCode.toDataURL(rsvpUrl, {
-  width: 360,
-  margin: 1,
-  color: { dark: "#5b4a2a", light: "#ffffff" }, // marrom-dourado quente, na paleta
-  errorCorrectionLevel: "M",
-});
+// Fonte caligráfica dos nomes (Alex Brush): EMBUTIDA como data URL.
+// Sem isso, o Chrome headless não baixa a fonte remota a tempo e cai no
+// fallback do Windows (Comic Sans). Baixa uma vez e cacheia localmente.
+const alexBrushTtf = "scripts/.alex-brush.ttf";
+const alexBrushAbs = path.join(process.cwd(), alexBrushTtf);
+if (!fs.existsSync(alexBrushAbs)) {
+  const fontUrl = "https://fonts.gstatic.com/s/alexbrush/v23/SZc83FzrJKuqFbwMKk6EtUI.ttf";
+  try {
+    const res = await fetch(fontUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    fs.writeFileSync(alexBrushAbs, buf);
+    console.log("✅ Fonte Alex Brush baixada e cacheada:", alexBrushTtf);
+  } catch (err) {
+    console.error(
+      `\n❌ Não foi possível obter a fonte Alex Brush (${err.message}).\n` +
+      `   Sem ela o convite renderiza em Comic Sans. Conecte à internet e rode de novo,\n` +
+      `   ou coloque manualmente o arquivo em ${alexBrushTtf}.\n`
+    );
+    process.exit(1);
+  }
+}
+const alexBrushDataUrl = toDataUrl(alexBrushTtf, "font/ttf");
 
 // Paleta oficial (app/globals.css)
 const html = `<!DOCTYPE html>
@@ -82,21 +98,37 @@ const html = `<!DOCTYPE html>
 <title>Convite — ${familyName}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Alex Brush NÃO entra aqui: é carregada só via @font-face embutido (base64) abaixo.
+     Ter as duas (link remoto + embutida) fazia o Chrome não embutir o glifo no PDF,
+     deixando os nomes invisíveis em alguns leitores. -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  @page { size: A5 portrait; margin: 0; }
+  /* Alex Brush embutida (data URL) — garante render determinístico no headless,
+     sem depender de download remoto (que cairia em Comic Sans). */
+  @font-face {
+    font-family: 'Alex Brush';
+    font-style: normal; font-weight: 400; font-display: block;
+    src: url('${alexBrushDataUrl}') format('truetype');
+  }
+  @page { size: 1080px 1920px; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --gold: #a6854a;          /* gold-dim oficial — legível sobre creme */
-    --gold-bright: #c5a059;   /* gold oficial */
-    --gold-deep: #7d6332;
+    /* Paleta "save the date" azul (MJ): azul-marinho como tinta principal,
+       dourado mantido como acento (filetes, gems, divisor). */
+    --gold: #a6854a;          /* gold-dim — acento legível sobre creme */
+    --gold-bright: #c5a059;   /* gold — acento (e o '&' dos nomes) */
+    --gold-deep: #7d6332;     /* gold escuro — labels de acento */
+    --navy: #1e3a5f;          /* azul-marinho — tinta principal */
+    --navy-deep: #0a1f33;     /* azul profundo — nomes/títulos */
+    --navy-soft: #3f5f80;     /* azul suave — textos secundários */
+    --watercolor-blue: #5f7d99; /* azul-claro suave da aquarela da catedral (nomes + frase) */
     --ink: #2f3331;           /* on-surface oficial */
     --ink-soft: #5c605d;      /* on-surface-variant */
     --cream: #f5efe3;
     --cream-soft: #faf6ec;
   }
   html, body {
-    width: 148mm; height: 210mm;
+    width: 1080px; height: 1920px;
     background: var(--cream);
     color: var(--ink);
     font-family: 'Cormorant Garamond', serif;
@@ -105,185 +137,126 @@ const html = `<!DOCTYPE html>
   }
   .page {
     position: relative;
-    width: 148mm; height: 210mm;
-    background: var(--cream);
+    width: 1080px; height: 1920px;
+    background: linear-gradient(180deg, var(--cream-soft) 0%, var(--cream) 45%);
     overflow: hidden;
   }
 
-  /* Catedral integrada ao fundo — ocupa toda a REGIÃO SUPERIOR (atrás do
-     monograma, nomes, data e detalhes), esmaecendo nas bordas. Opacidade
-     baixa para não atrapalhar a leitura do texto sobreposto; termina antes
-     do card CTA. */
-  .cathedral-bg {
+  /* Moldura fina — ABERTA embaixo: filete só no topo e laterais, para a Catedral
+     fluir livre até a base como fundo (destaque principal). */
+  .frame {
+    position: absolute; inset: 36px; pointer-events: none; z-index: 4;
+    border: 1.5px solid rgba(30,58,95,0.55); border-bottom: none;
+  }
+  .frame::before {
+    content:''; position:absolute; inset: 7px;
+    border: 1px solid rgba(166,133,74,0.32); border-bottom: none;
+  }
+
+  /* === ZONA BASE: Catedral PROTAGONISTA do fundo — grande, sangrando até a
+     base da página, subindo até logo abaixo do botão. === */
+  .cathedral {
     position: absolute;
-    left: 50%; top: 4mm;
+    left: 50%; bottom: 0;
     transform: translateX(-50%);
-    width: 250mm;
-    opacity: 0.22;
-    -webkit-mask-image:
-      linear-gradient(180deg, transparent 2%, #000 16%, #000 78%, transparent 100%),
-      radial-gradient(ellipse 60% 70% at 50% 50%, #000 55%, transparent 92%);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(180deg, transparent 2%, #000 16%, #000 78%, transparent 100%),
-      radial-gradient(ellipse 60% 70% at 50% 50%, #000 55%, transparent 92%);
-    mask-composite: intersect;
-    pointer-events: none;
-  }
-  .veil {
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg,
-      rgba(245,239,227,0.40) 0%, rgba(245,239,227,0.10) 22%,
-      rgba(245,239,227,0.10) 56%, rgba(245,239,227,0.5) 72%, rgba(245,239,227,0.78) 100%);
+    width: 172%;
+    display: block;
+    z-index: 1;
+    /* cor natural, leve dessaturação para casar com o creme; sem hue-rotate */
+    filter: saturate(0.92) brightness(1.01);
+    /* fade curto só na borda superior para fundir com o creme */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 100%);
     pointer-events: none;
   }
 
-  /* Moldura dupla clássica + ornamentos de canto */
-  .frame { position: absolute; inset: 7mm; border: 0.5mm solid rgba(166,133,74,0.6); pointer-events: none; }
-  .frame::before { content:''; position:absolute; inset: 1.6mm; border: 0.2mm solid rgba(166,133,74,0.32); }
-  .corner { position: absolute; width: 9mm; height: 9mm; z-index: 3; pointer-events: none; }
-  .corner::before, .corner::after { content:''; position:absolute; background: var(--gold); }
-  .corner::before { width: 9mm; height: 0.4mm; }
-  .corner::after  { width: 0.4mm; height: 9mm; }
-  .corner .gem { position:absolute; width: 1.8mm; height: 1.8mm; border: 0.3mm solid var(--gold); transform: rotate(45deg); }
-  .corner.tl { top: 5.4mm; left: 5.4mm; }
-  .corner.tl::before { top:0; left:0; } .corner.tl::after { top:0; left:0; }
-  .corner.tl .gem { top: -0.9mm; left: -0.9mm; }
-  .corner.tr { top: 5.4mm; right: 5.4mm; }
-  .corner.tr::before { top:0; right:0; } .corner.tr::after { top:0; right:0; }
-  .corner.tr .gem { top: -0.9mm; right: -0.9mm; }
-  .corner.bl { bottom: 5.4mm; left: 5.4mm; }
-  .corner.bl::before { bottom:0; left:0; } .corner.bl::after { bottom:0; left:0; }
-  .corner.bl .gem { bottom: -0.9mm; left: -0.9mm; }
-  .corner.br { bottom: 5.4mm; right: 5.4mm; }
-  .corner.br::before { bottom:0; right:0; } .corner.br::after { bottom:0; right:0; }
-  .corner.br .gem { bottom: -0.9mm; right: -0.9mm; }
-
+  /* === ZONA TOPO: conteúdo === */
   .content {
-    position: absolute; inset: 0; z-index: 2;
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 56%;
+    z-index: 3;
     display: flex; flex-direction: column; align-items: center;
-    padding: 15mm 16mm 20mm;
+    padding: 120px 96px 0;
     text-align: center;
   }
 
   /* 1 — Selo da marca */
-  .monogram { width: 26mm; height: auto; margin-bottom: 3.5mm; filter: drop-shadow(0 1mm 2mm rgba(120,95,45,0.18)); }
+  .monogram { width: 150px; height: auto; margin-bottom: 28px; filter: drop-shadow(0 4px 10px rgba(120,95,45,0.18)); }
 
-  /* 2 — Eyebrow acolhedor (tom suave: degrau abaixo dos labels dourados) */
+  /* 2 — Nomes em Alex Brush (pico emocional) — azul-claro da aquarela */
+  .names {
+    font-family: 'Alex Brush', 'Cormorant Garamond', serif; line-height: 0.95;
+    color: var(--watercolor-blue); font-size: 138px; margin-top: 8px;
+  }
+  .names .amp { color: var(--watercolor-blue); }
+
+  /* 3 — Frase de convite, ABAIXO dos nomes (dourado, igual aos labels do evento) */
   .eyebrow {
-    font-family: 'Montserrat', sans-serif; font-weight: 400;
-    font-size: 7pt; letter-spacing: 0.36em; text-transform: uppercase;
-    color: var(--ink-soft); margin-bottom: 4.5mm;
+    font-family: 'Montserrat', sans-serif; font-weight: 600;
+    font-size: 19px; letter-spacing: 0.34em; text-transform: uppercase;
+    color: var(--gold-deep); margin-top: 26px;
   }
 
-  /* 3 — Nomes (pico emocional) */
-  .names { display: flex; align-items: baseline; justify-content: center; gap: 4mm; }
-  .name {
-    font-family: 'Playfair Display', serif; font-style: italic; font-weight: 500;
-    font-size: 31pt; line-height: 1; color: var(--ink);
-  }
-  .amp { font-family: 'Alex Brush', cursive; font-size: 37pt; color: var(--gold-bright); line-height: 1; }
-
-  /* 4 — Data / cidade (âncora) */
+  /* 4 — Data / cidade */
   .date {
     font-family: 'Montserrat', sans-serif; font-weight: 400;
-    font-size: 9.5pt; letter-spacing: 0.42em; text-transform: uppercase;
-    color: var(--ink); margin-top: 5mm;
+    font-size: 28px; letter-spacing: 0.42em; text-transform: uppercase;
+    color: var(--navy); margin-top: 34px;
   }
   .city {
     font-family: 'Montserrat', sans-serif; font-weight: 300;
-    font-size: 7pt; letter-spacing: 0.34em; text-transform: uppercase;
-    color: var(--ink-soft); margin-top: 2mm;
+    font-size: 19px; letter-spacing: 0.34em; text-transform: uppercase;
+    color: var(--ink-soft); margin-top: 12px;
   }
 
-  /* Divisor ornamental da marca */
-  .ornament { display: flex; align-items: center; gap: 2.5mm; margin: 6mm 0 5mm; }
-  .ornament .line { width: 16mm; height: 0.2mm; background: rgba(166,133,74,0.6); }
-  .ornament .dot { width: 1.6mm; height: 1.6mm; border: 0.2mm solid var(--gold); transform: rotate(45deg); }
+  /* Divisor ornamental fino */
+  .ornament { display: flex; align-items: center; gap: 14px; margin: 40px 0 34px; }
+  .ornament .line { width: 90px; height: 1px; background: rgba(166,133,74,0.6); }
+  .ornament .dot { width: 9px; height: 9px; border: 1px solid var(--gold); transform: rotate(45deg); }
 
-  /* 6 — Detalhes do evento (contexto, 2 colunas) */
-  .details { display: flex; gap: 9mm; justify-content: center; margin-bottom: auto; }
-  .detail { max-width: 42mm; }
+  /* 6 — Detalhes do evento (2 colunas) */
+  .details { display: flex; gap: 64px; justify-content: center; margin-bottom: 40px; }
+  .detail { max-width: 280px; }
   .detail .label {
     font-family: 'Montserrat', sans-serif; font-weight: 600;
-    font-size: 6.5pt; letter-spacing: 0.26em; text-transform: uppercase;
-    color: var(--gold-deep); margin-bottom: 1.5mm;
+    font-size: 16px; letter-spacing: 0.26em; text-transform: uppercase;
+    color: var(--gold-deep); margin-bottom: 10px;
   }
   .detail .place {
     font-family: 'Cormorant Garamond', serif; font-weight: 600;
-    font-size: 11.5pt; line-height: 1.2; color: var(--ink);
+    font-size: 30px; line-height: 1.2; color: var(--navy-deep);
   }
   .detail .time {
     font-family: 'Montserrat', sans-serif; font-weight: 400;
-    font-size: 8pt; letter-spacing: 0.18em; color: var(--ink); margin-top: 1.5mm;
+    font-size: 19px; letter-spacing: 0.18em; color: var(--navy); margin-top: 8px;
   }
 
-  /* 7 — Bloco CTA (ponto focal, levemente elevado) */
-  .cta {
-    width: 100%; z-index: 2;
-    background: rgba(252,249,242,0.96);
-    border: 0.4mm solid rgba(166,133,74,0.65);
-    border-radius: 4mm;
-    padding: 6mm 6mm 5.5mm;
-  }
-  .cta-eyebrow {
-    font-family: 'Montserrat', sans-serif; font-weight: 600;
-    font-size: 6.5pt; letter-spacing: 0.26em; text-transform: uppercase;
-    color: var(--gold-deep); margin-bottom: 3.5mm;
-  }
+  /* 7 — Botão único (CTA) */
   .btn {
     display: inline-block;
     font-family: 'Montserrat', sans-serif; font-weight: 600;
-    font-size: 11pt; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 24px; letter-spacing: 0.08em;
     color: #fff; text-decoration: none;
-    background: linear-gradient(160deg, #c9a85e 0%, #a6854a 60%, #8a6d38 100%);
-    border: 0.35mm solid #7d6332;
-    border-radius: 50mm; padding: 3.4mm 12mm;
-    margin-bottom: 3mm;
-  }
-  .cta-desc {
-    font-family: 'Cormorant Garamond', serif; font-weight: 500;
-    font-size: 11pt; line-height: 1.4; color: var(--ink); max-width: 96mm; margin: 0 auto 4mm;
-  }
-  .cta-desc strong { color: var(--gold-deep); font-weight: 600; }
-
-  .alt { display: flex; align-items: center; justify-content: center; gap: 3mm; }
-  .qr-wrap { background: #fff; padding: 1.6mm; border-radius: 1.6mm; border: 0.2mm solid rgba(166,133,74,0.32); }
-  .qr-wrap img { display: block; width: 17mm; height: 17mm; }
-  .qr-hint {
-    font-family: 'Montserrat', sans-serif; font-weight: 300;
-    font-size: 6.5pt; letter-spacing: 0.16em; text-transform: uppercase;
-    color: #9a8c72; text-align: left; max-width: 30mm; line-height: 1.4;
-  }
-
-  /* 8 — Rodapé discreto */
-  .footer {
-    position: absolute; bottom: 9mm; left: 0; right: 0; z-index: 2;
-    text-align: center;
-    font-family: 'Montserrat', sans-serif; font-weight: 400;
-    font-size: 6.5pt; letter-spacing: 0.3em; color: #b3a585;
+    background: linear-gradient(160deg, #2f567f 0%, #1e3a5f 60%, #0a1f33 100%);
+    border: 1px solid #0a1f33;
+    /* Sem sombra externa com blur: o viewer de PDF do WhatsApp a rasteriza como
+       um halo amarelado retangular. Só o highlight dourado interno (sem blur). */
+    box-shadow: inset 0 1px 0 rgba(197,160,89,0.45);
+    border-radius: 999px; padding: 22px 56px; max-width: 84%;
+    line-height: 1.25;
   }
 </style>
 </head>
 <body>
   <div class="page">
-    ${cathedral ? `<img class="cathedral-bg" src="${cathedral}" alt="" />` : ""}
-    <div class="veil"></div>
     <div class="frame"></div>
-    <span class="corner tl"><span class="gem"></span></span>
-    <span class="corner tr"><span class="gem"></span></span>
-    <span class="corner bl"><span class="gem"></span></span>
-    <span class="corner br"><span class="gem"></span></span>
+    ${cathedral ? `<img class="cathedral" src="${cathedral}" alt="Catedral de Brasília" />` : ""}
 
     <div class="content">
       ${monogram ? `<img class="monogram" src="${monogram}" alt="Monograma M&I" />` : ""}
-      <div class="eyebrow">Com alegria, convidamos você</div>
 
-      <div class="names">
-        <span class="name">${EVENT.coupleFirst}</span>
-        <span class="amp">&amp;</span>
-        <span class="name">${EVENT.coupleSecond}</span>
-      </div>
+      <div class="names">${EVENT.coupleFirst} <span class="amp">&amp;</span> ${EVENT.coupleSecond}</div>
+      <div class="eyebrow">Convidam para o seu casamento</div>
 
       <div class="date">${EVENT.dateShort}</div>
       <div class="city">${EVENT.city}</div>
@@ -303,21 +276,8 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
 
-      <div class="cta">
-        <div class="cta-eyebrow">Seu lugar está reservado</div>
-        <a class="btn" href="${rsvpUrl}">${buttonText}</a>
-        <div class="cta-desc">
-          No link você <strong>confirma sua presença</strong>, vê os
-          <strong>detalhes do evento</strong> e a nossa <strong>lista de presentes</strong>.
-        </div>
-        <div class="alt">
-          <div class="qr-wrap"><img src="${qrDataUrl}" alt="QR Code do convite" /></div>
-          <div class="qr-hint">ou aponte a câmera do celular</div>
-        </div>
-      </div>
+      <a class="btn" href="${rsvpUrl}">${buttonText}</a>
     </div>
-
-    <div class="footer">${code}</div>
   </div>
 </body>
 </html>`;
@@ -343,9 +303,19 @@ if (!browser) {
   console.log("\n⚠️  Chrome/Edge não encontrado — abra o HTML e salve como PDF (A5).");
 } else {
   try {
+    // --headless=new + --virtual-time-budget: dá tempo de o @font-face embutido
+    // (base64) ser decodificado e aplicado ANTES da impressão. Sem isso, o
+    // --print-to-pdf imprime cedo demais e cai em Arial/Times (nomes "somem").
     execFileSync(
       browser,
-      ["--headless", "--disable-gpu", "--no-pdf-header-footer", `--print-to-pdf=${pdfFile}`, fileUrl],
+      [
+        "--headless=new",
+        "--disable-gpu",
+        "--no-pdf-header-footer",
+        "--virtual-time-budget=5000",
+        `--print-to-pdf=${pdfFile}`,
+        fileUrl,
+      ],
       { stdio: "ignore", timeout: 40000 }
     );
     console.log("✅ PDF gerado:", pdfFile);
