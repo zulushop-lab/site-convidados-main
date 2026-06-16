@@ -19,6 +19,9 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname),
+  // firebase-admin tem require dinamico/binarios; deixa-lo external evita que o
+  // bundling/coleta de page-data das rotas app/api/** (SPEC-PAYMENTS-MP) quebre.
+  serverExternalPackages: ['firebase-admin'],
   async headers() {
     // A CSP rigida (sem 'unsafe-eval') so e emitida em producao. Em desenvolvimento
     // o Fast Refresh do Next (react-refresh-utils) usa eval(), que a CSP bloquearia,
