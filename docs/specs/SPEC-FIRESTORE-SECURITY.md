@@ -1,6 +1,6 @@
 # SPEC-FIRESTORE-SECURITY — Segurança de dados: rules + config
 
-> Status: planejado · Fase original: 1 · Track: A · Depende de: — · Destrava: SPEC-GIFTS-CATALOG, SPEC-CHECKOUT-HONESTY, SPEC-RSVP-AUTH, SPEC-PAYMENTS-MP
+> Status: ✅ implementado e verificado (16/06 — `npm run test:rules:hardened` 15/15 PASS; falta deploy em prod após PREFLIGHT do banco) · Fase original: 1 · Track: A · Depende de: — · Destrava: SPEC-GIFTS-CATALOG, SPEC-CHECKOUT-HONESTY, SPEC-RSVP-AUTH, SPEC-PAYMENTS-MP
 
 ## 1. Objetivo
 Endurecer a camada de segurança do Firestore (rules + configuração de deploy + higiene de segredos) para que o servidor — e não o cliente anônimo — seja a fonte da verdade do dinheiro. Hoje qualquer visitante pode gravar uma contribuição `status: 'completed'` de valor arbitrário direto do navegador. Esta spec fecha esse buraco ANTES de qualquer outra do Track A, porque os writers (catálogo, checkout, RSVP, pagamentos) precisam casar com rules já endurecidas.

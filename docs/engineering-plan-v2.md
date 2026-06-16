@@ -1,5 +1,14 @@
 # Plano de Engenharia v2 — Site Isadora & Matheus
 
+> ⚠️ **STATUS DESATUALIZADO (revisado em 2026-06-16).** O "Sumário executivo" abaixo descreve o
+> **núcleo de fachada original** que **já foi corrigido**: o pagamento grava `pending` (não `completed`),
+> o RSVP autentica de verdade (sem nome hardcoded), `firestore.rules` está endurecido (`test:rules:hardened`
+> 15/15 PASS), a Gravata **tem página** (não é mais 404), e a intro **não usa** `eval()`/CDN. Os status
+> "execução pendente" valem só para **SPEC-PAYMENTS-MP** e **SPEC-GRAVATA-LEADERBOARD** (scaffold, faltam
+> credenciais/infra) e para as **tarefas humanas** (PREFLIGHT, planilhas, deploy).
+> **Fonte de verdade:** `C:\Users\CARRE\.claude\plans\wortree-atualizada-verifique-o-squishy-eich.md`
+> e os cabeçalhos de status corrigidos em cada `docs/specs/SPEC-*.md`.
+>
 > Status: **aprovado como plano (execução pendente)** · Data: 2026-06-15
 > Origem: verificação multi-agente do código atual + `/grill-me`. Supera e detalha o [engineering-backlog-plan.md](engineering-backlog-plan.md) (6 fases → **8 SPECs** + sprints).
 > Trilha de engenharia. A trilha de design vive no [DESIGN.md](../DESIGN.md) e no [design-upgrade-agreement.html](design-upgrade-agreement.html).

@@ -1,5 +1,5 @@
 # SPEC-RSVP-AUTH — RSVP-First real: capability URL via WhatsApp + Anonymous Auth + GuestGate soft
-> Status: planejado · Fase original: 3 · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-GRAVATA-LEADERBOARD, atribuição por família em `rsvps`/`contributions`
+> Status: ✅ funcional (16/06 — AuthContext/GuestContext + lookup code→family→guests + write por família em `app/rsvp/[code]/page.tsx:138-149`, alinhado às rules). Resta: humano preencher planilha de convidados + `seed-families` + distribuir links · Fase original: 3 · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-GRAVATA-LEADERBOARD, atribuição por família em `rsvps`/`contributions`
 
 ## 1. Objetivo
 Transformar o RSVP de fachada (`app/rsvp/[code]/page.tsx` com nome hardcoded e zero lookup) em fluxo real: o convidado abre uma **capability URL** entregue por WhatsApp, ganha um `uid` via **Anonymous Auth**, o código de família é resolvido contra o Firestore, e a identidade (`familyId`/`guestId`) é carimbada em todas as escritas (`rsvps`, `contributions`). Implanta o **GuestGate SOFT** (personaliza e identifica, mas não bloqueia navegação anônima). Isso destrava a agregação por família do leaderboard (ADR-0004) e o RSVP por núcleo familiar.

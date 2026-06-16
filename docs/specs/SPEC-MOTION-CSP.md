@@ -1,6 +1,6 @@
 # SPEC-MOTION-CSP — Remover eval(), versionar deps de animação, CSP e tier de reduced-motion
 
-> Status: planejado · Fase original: 6 · Track: B · Depende de: — · Destrava: —
+> Status: ✅ implementado (16/06 — CSP em `next.config.ts`, sem `eval`/CDN, deps versionadas; falta validação visual no browser de produção) · Fase original: 6 · Track: B · Depende de: — · Destrava: —
 
 ## 1. Objetivo
 

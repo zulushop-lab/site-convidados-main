@@ -1,5 +1,5 @@
 # SPEC-PAYMENTS-MP — Pagamento real Mercado Pago (Pix dinâmico + Checkout Bricks + webhook)
-> Status: planejado · Fase original: 4 · Track: A · Depende de: SPEC-FIRESTORE-SECURITY, SPEC-CHECKOUT-HONESTY · Destrava: SPEC-GRAVATA-LEADERBOARD
+> Status: 🟡 scaffold pronto (16/06 — rotas `/api/pix`, `/api/webhook/mercadopago`, `/api/payments/[id]/status` + wrappers `lib/server/*` existem). Resta: IA ligar UI→`/api/pix`+polling; humano obter credenciais MP · Fase original: 4 · Track: A · Depende de: SPEC-FIRESTORE-SECURITY, SPEC-CHECKOUT-HONESTY · Destrava: SPEC-GRAVATA-LEADERBOARD
 
 ## 1. Objetivo
 Substituir a fachada de pagamento do checkout por uma integração real com o **Mercado Pago**: um backend server-side (Route Handlers Next em `app/api/**`) que cria pagamento **Pix dinâmico** (QR + copia-e-cola com valor/itens reais) e recebe **webhooks** para promover a contribuição de `pending` → `completed`/`failed` via **Firebase Admin SDK**. O cliente passa a consumir o QR real e, no cartão, o **Checkout Bricks** oficial do MP. Como ainda **não há credenciais MP** (decisão travada nº 2), esta spec entrega **scaffold com env placeholders** que degrada honestamente para `pending`/"modo simulado" e só liga de verdade quando as chaves chegarem. É a **última** etapa do fluxo de presentes (catálogo real primeiro).

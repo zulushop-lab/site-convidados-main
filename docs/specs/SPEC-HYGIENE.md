@@ -1,6 +1,6 @@
 # SPEC-HYGIENE — Higiene & quick wins
 
-> Status: planejado · Fase original: 0 · Track: B · Depende de: — · Destrava: build limpo (base para todas as demais specs)
+> Status: ✅ implementado (16/06 — catálogo extraído p/ `domain/gifts/catalog.ts`, tipos centralizados, sem dead-seed) · Fase original: 0 · Track: B · Depende de: — · Destrava: build limpo (base para todas as demais specs)
 
 ## 1. Objetivo
 Eliminar a dívida de higiene barata e de alto retorno do repositório: corrigir o bug de render do token fantasma `--primary-fixed-dim` (timeline de eventos renderiza sem cor), remover código/dependências/fontes/CSS mortos, consertar typos visíveis e apagar a identidade residual de "AI Studio". É a Fase 0 do Track B: não toca DB nem runtime transacional, mas deixa o terreno limpo (build sem ruído, sem deps fantasma) para todas as specs subsequentes.

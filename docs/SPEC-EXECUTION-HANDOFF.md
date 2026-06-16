@@ -1,3 +1,16 @@
+> ⚠️ **DOCUMENTO HISTÓRICO / DESATUALIZADO (arquivado em 2026-06-16).**
+> O estado descrito abaixo reflete a worktree de **15/06** e **não** corresponde mais ao código atual.
+> Verificações de 16/06 contra o código real divergem deste snapshot em pontos críticos:
+> - `firestore.rules` **JÁ está endurecido** e `npm run test:rules:hardened` passa **15/15** (aqui consta "ainda NÃO endurecido" / "hardened falhou").
+> - `SPEC-GIFTS-CATALOG`, `SPEC-CHECKOUT-HONESTY` e `SPEC-RSVP-AUTH` estão **implementadas** (aqui constam "não executadas").
+> - As rotas Mercado Pago (`/api/pix`, `/api/webhook`, `/api/payments/[id]/status`) **já existem** (aqui consta "sem rotas MP").
+>
+> **Fonte de verdade atual:** o roadmap verificado em
+> `C:\Users\CARRE\.claude\plans\wortree-atualizada-verifique-o-squishy-eich.md`.
+> Mantido apenas como registro do que se sabia em 15/06.
+
+---
+
 # Context Snapshot | SPEC Execution | 2026-06-15
 
 ## Objetivo

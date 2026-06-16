@@ -1,5 +1,5 @@
 # SPEC-CHECKOUT-HONESTY — Checkout & RSVP honestos
-> Status: planejado · Fase original: 2b · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-PAYMENTS-MP
+> Status: ✅ objetivo cumprido (16/06 — checkout grava `status:'pending'` em `app/presentes/checkout/page.tsx:63`, cartão desabilitado, copy honesta de "modo simulado"). A parte "Pix real" pertence a SPEC-PAYMENTS-MP · Fase original: 2b · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-PAYMENTS-MP
 
 ## 1. Objetivo
 Remover as mentiras transacionais do fluxo de presente e da tela de confirmação de RSVP, sem implementar pagamento real ainda. A contribuição passa a nascer honestamente como `'pending'` (a verdade até o webhook do Mercado Pago promover o status), a copy de sucesso para de afirmar pagamento confirmado, o formulário de cartão (campos mortos) é rotulado/desabilitado como "em breve", e o card fake "Cotas de Lua de Mel — Finalizada" some de `/presenca`. Esta spec prepara o terreno honesto que a SPEC-PAYMENTS-MP vai preencher com QR/Pix dinâmico e brick de cartão reais.

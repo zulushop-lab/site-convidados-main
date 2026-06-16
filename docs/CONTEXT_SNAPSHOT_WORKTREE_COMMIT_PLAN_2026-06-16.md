@@ -1,3 +1,16 @@
+> ⚠️ **DOCUMENTO HISTÓRICO / SUPERADO (arquivado em 2026-06-16, mesmo dia).**
+> Este plano de commits descreve uma worktree **com mudanças não commitadas**. Esse estado **já passou**:
+> as mudanças foram **commitadas** (commits `81f4c50`…`b3b140e`) e a worktree está **limpa**
+> (`git status` vazio); a branch `main` está 8 commits à frente de `origin/main`, **não pushada**.
+> O "bloqueador" principal aqui — `/presenca` gravando RSVP no contrato antigo — **já foi resolvido**:
+> `app/presenca/page.tsx` é hoje uma página **somente informativa** (não escreve RSVP).
+>
+> **Fonte de verdade atual:** o roadmap verificado em
+> `C:\Users\CARRE\.claude\plans\wortree-atualizada-verifique-o-squishy-eich.md`.
+> Mantido apenas como registro do plano de organização de commits de 16/06.
+
+---
+
 # Context Snapshot | Worktree Commit Plan | 2026-06-16
 
 ## Objetivo

@@ -1,6 +1,6 @@
 # SPEC-GIFTS-CATALOG — Catálogo real de presentes + seed admin
 
-> Status: planejado · Fase original: 2a · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-CHECKOUT-HONESTY, SPEC-PAYMENTS-MP
+> Status: ✅ implementado vs. realidade (16/06 — cliente só lê `GIFT_CATALOG` de `domain/gifts/catalog.ts`; `scripts/seed-gifts.mjs` existe). ⚠️ Esta spec foi escrita contra um código ANTIGO (descreve `DEFAULT_GIFTS`+`setDoc` no cliente que não existem mais); ler como histórico. Resta: humano preencher planilha + rodar seed · Fase original: 2a · Track: A · Depende de: SPEC-FIRESTORE-SECURITY · Destrava: SPEC-CHECKOUT-HONESTY, SPEC-PAYMENTS-MP
 
 ## 1. Objetivo
 Transformar a lista de presentes de um catálogo fake hardcoded no cliente (com seed destrutivo) em um catálogo real, mantido por um script admin a partir de uma planilha de presentes reais (descrição, foto, preço, categoria, cotas). O cliente passa a SÓ LER a coleção `gifts`; a escrita fica exclusiva do admin (via Firebase Admin SDK), casando com as rules endurecidas em SPEC-FIRESTORE-SECURITY. Esta spec também conserta o spinner que pode travar e remove a re-semeadura por divergência de contagem. Decisão travada do usuário: PRIMEIRO o catálogo real com categorias, DEPOIS o Mercado Pago.
