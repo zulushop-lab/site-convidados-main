@@ -4,27 +4,23 @@ import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { IntroAnimation } from './IntroAnimation';
 
 export function LoadingScreen() {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  // Initial Load Check
+  // A animação cinematográfica de abertura foi movida para DEPOIS da
+  // confirmação de presença (ver CathedralReveal). Aqui mantemos apenas o
+  // loader leve de troca de rota — a capa do convite (CathedralIntro) é quem
+  // cobre a primeira tela.
   useEffect(() => {
     setMounted(true);
-    const hasSeenIntro = sessionStorage.getItem('hasSeenCathedralIntro');
-    if (hasSeenIntro) {
-      setIsInitialLoad(false);
-      setIsVisible(false); // They've seen it, don't show the initial loader
-    }
   }, []);
 
   // Route Change Load - Synchronized with system events
   useEffect(() => {
-    if (isInitialLoad || !mounted) return;
+    if (!mounted) return;
 
     let timeoutId: NodeJS.Timeout;
 
@@ -42,45 +38,20 @@ export function LoadingScreen() {
       }, 600);
     };
 
-    const handleTriggerIntro = () => {
-      setIsInitialLoad(true);
-      setIsVisible(true);
-    };
-
     window.addEventListener('ais-loading-start', handleStart);
-    window.addEventListener('ais-trigger-intro', handleTriggerIntro);
     handleComplete();
 
     return () => {
       window.removeEventListener('ais-loading-start', handleStart);
-      window.removeEventListener('ais-trigger-intro', handleTriggerIntro);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [pathname, isInitialLoad, mounted]);
-
-  const handleIntroComplete = () => {
-    setIsVisible(false);
-    setIsInitialLoad(false);
-    sessionStorage.setItem('hasSeenCathedralIntro', 'true');
-  };
+  }, [pathname, mounted]);
 
   if (!mounted) return null;
 
   return (
     <AnimatePresence mode="wait">
-      {isVisible && isInitialLoad && (
-        <motion.div
-           key="cathedral-intro"
-           initial={{ opacity: 1 }}
-           exit={{ opacity: 0 }}
-           transition={{ duration: 1.5, ease: "easeInOut" }}
-           className="fixed inset-0 z-[100] bg-black"
-        >
-          <IntroAnimation onComplete={handleIntroComplete} />
-        </motion.div>
-      )}
-
-      {isVisible && !isInitialLoad && (
+      {isVisible && (
         <motion.div
           key="loader"
           initial={{ opacity: 0, scale: 1.1, rotateX: 5 }}

@@ -1,249 +1,232 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
+import React, { useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { useAppStore } from "@/lib/store/useAppStore";
-import { CathedralSVG } from "@/components/CathedralSVG";
+import { useRouter } from "next/navigation";
+import { useAppStore, shouldSkipCover } from "@/lib/store/useAppStore";
 import { useReducedMotionPreference } from "@/lib/hooks/useReducedMotionPreference";
-import { playGlobalIntroAudio } from "./GlobalAudioPlayer";
+import { NoiseOverlay } from "@/components/NoiseOverlay";
 
+// Paleta localizada do "save the date" azul (MJ): azul-marinho + dourado + creme.
+const NAVY = "#1e3a5f";
+const NAVY_DEEP = "#0a1f33";
+const GOLD = "#C5A059";
+
+// Canto ornamental da moldura (espelhado via transform conforme a posição).
+function FrameCorner({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 80 80"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M2 2 L2 30 M2 2 L30 2"
+        stroke={NAVY}
+        strokeWidth="1.5"
+      />
+      <path
+        d="M10 10 L10 24 M10 10 L24 10"
+        stroke={GOLD}
+        strokeWidth="1"
+      />
+      <path
+        d="M14 14 C 30 14, 30 30, 46 30 M14 14 C 14 30, 30 30, 30 46"
+        stroke={NAVY}
+        strokeWidth="0.9"
+        opacity="0.55"
+      />
+      <circle cx="14" cy="14" r="2" fill={GOLD} />
+    </svg>
+  );
+}
+
+/**
+ * Capa do convite (estilo papel / aquarela), na paleta azul do "save the date".
+ * Primeira tela vista pelo convidado: monograma, nomes em script, data, a
+ * Catedral em aquarela e UM unico botao de entrada para o fluxo de presenca.
+ *
+ * Reaproveita a FSM `homeState`: enquanto !== 'TRANSITIONED' a capa cobre a
+ * viewport; o botao dispensa a capa (TRANSITIONED) e navega para /presenca.
+ * A antiga animação 3D foi movida para depois da confirmação (CathedralReveal).
+ */
 export const CathedralIntro = () => {
   const { homeState, setHomeState } = useAppStore();
-  const [step, setStep] = useState(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tubesRef = useRef<any>(null);
+  const router = useRouter();
   const reducedMotion = useReducedMotionPreference();
-  const masterProgress = useMotionValue(0);
 
+  // Se o convidado acabou de confirmar pelo link /rsvp/<code>, a animação 3D já
+  // rodou — dispensa a capa no cliente (sem hydration mismatch: o servidor
+  // sempre renderiza a capa; a flag só existe no sessionStorage do cliente).
   useEffect(() => {
-    if (homeState !== "ANIMATING_LOADING") return;
+    if (shouldSkipCover()) setHomeState("TRANSITIONED");
+  }, [setHomeState]);
 
-    const t1 = setTimeout(() => {
-      setStep(1);
-      masterProgress.set(0);
-    }, 3200);
-
-    const t2 = setTimeout(() => {
-      setHomeState("READY_FOR_INTERACTION");
-      try {
-        playGlobalIntroAudio();
-      } catch (err) {
-        console.warn("Autoplay blocked or audio error:", err);
-      }
-    }, 7200);
-
-    let mounted = true;
-    let frame: number | undefined;
-
-    const initTubes = async () => {
-      const browserReducedMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (reducedMotion || browserReducedMotion || !canvasRef.current || typeof window === "undefined") return;
-
-      // O efeito de tubos é puramente decorativo. Em produção a CSP estrita
-      // (sem 'unsafe-eval') bloqueia o `new Function` usado pelo bundle do
-      // threejs-components, o que lançaria erro já na avaliação do módulo
-      // importado. Envolvemos TODO o caminho (incl. o import dinâmico) para
-      // que qualquer falha apenas seja logada e nunca derrube a intro/home.
-      try {
-        const threeModule = await import("threejs-components/build/cursors/tubes1.min.js");
-        const TubesCursor = threeModule.default;
-        if (!mounted || !canvasRef.current) return;
-
-        const app = TubesCursor(canvasRef.current, {
-          tubes: {
-            colors: ["#0a1f33", "#1a2f3d", "#000000"],
-            lights: {
-              intensity: 150,
-              colors: ["#d4af37", "#4ea8de", "#ffffff"],
-            },
-          },
-        });
-        tubesRef.current = app;
-
-        const updateLoop = () => {
-          if (step >= 2 || homeState !== "ANIMATING_LOADING") {
-            if (frame) cancelAnimationFrame(frame);
-            return;
-          }
-
-          if (tubesRef.current && canvasRef.current) {
-            const progress = masterProgress.get();
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-
-            let targetX = width / 2;
-            let targetY = height / 2;
-
-            if (step === 0) {
-              const angle = progress * Math.PI * 4;
-              const radius = 40 + Math.sin(progress * Math.PI) * 20;
-              targetX = width / 2 + Math.cos(angle) * radius;
-              targetY = height / 2 + Math.sin(angle) * radius;
-              tubesRef.current.tubes.setColors(["#0a1f33", "#d4af37", "#1a2f3d"]);
-            } else if (step === 1) {
-              const columns = 16;
-              const colIndex = Math.floor(progress * columns);
-              const colProgress = (progress * columns) % 1;
-              const radius = 240;
-              const angle = (colIndex / columns) * Math.PI * 2;
-              const txBase = Math.cos(angle) * radius;
-              targetX = width / 2 + txBase * (1 - colProgress * 0.35);
-              targetY = height - colProgress * height * 0.9 - 20;
-
-              tubesRef.current.tubes.setColors(
-                progress > 0.5
-                  ? ["#d4af37", "#f0f5fa", "#4ea8de"]
-                  : ["#1a2f3d", "#0a1f33", "#2a1f0d"]
-              );
-            }
-
-            if (tubesRef.current.pointer) {
-              tubesRef.current.pointer.x = (targetX / width) * 2 - 1;
-              tubesRef.current.pointer.y = -(targetY / height) * 2 + 1;
-              tubesRef.current.pointer.moved = true;
-            }
-          }
-
-          frame = requestAnimationFrame(updateLoop);
-        };
-
-        updateLoop();
-      } catch (e) {
-        console.error("Neon Flow init failed", e);
-      }
-    };
-
-    initTubes();
-
-    let animationControls: ReturnType<typeof animate> | undefined;
-    if (step === 0) {
-      animationControls = animate(masterProgress, 1, {
-        duration: reducedMotion ? 0 : 3,
-        ease: "easeInOut",
-      });
-    } else if (step === 1) {
-      animationControls = animate(masterProgress, 1, {
-        duration: reducedMotion ? 0 : 3,
-        ease: "easeOut",
-      });
-    }
-
-    return () => {
-      mounted = false;
-      clearTimeout(t1);
-      clearTimeout(t2);
-      if (frame) cancelAnimationFrame(frame);
-      animationControls?.stop();
-    };
-  }, [step, homeState, masterProgress, setHomeState, reducedMotion]);
-
-  const handleInteraction = () => {
-    if (homeState === "ANIMATING_LOADING" && step === 2) {
-      setHomeState("READY_FOR_INTERACTION");
-      playGlobalIntroAudio();
-    }
+  const handleEnter = () => {
+    setHomeState("TRANSITIONED");
+    router.push("/presenca");
   };
 
-  if (homeState === "TRANSITIONED") return null;
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const d = (delay: number) => (reducedMotion ? 0 : delay);
 
   return (
     <AnimatePresence>
-      {homeState === "ANIMATING_LOADING" && (
+      {homeState !== "TRANSITIONED" && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a1520] overflow-hidden"
-          onClick={handleInteraction}
+          key="invite-cover"
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-surface text-on-surface px-4 py-8 md:py-12"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: reducedMotion ? 0.2 : 1.2, ease: [0.22, 1, 0.36, 1] } }}
+          exit={{
+            opacity: 0,
+            transition: { duration: reducedMotion ? 0.2 : 1, ease },
+          }}
         >
-          <canvas
-            ref={canvasRef}
-            data-motion-canvas="intro"
-            className={cn(
-              "absolute inset-0 w-full h-full block mix-blend-screen transition-opacity duration-1000",
-              step === 2 || reducedMotion ? "opacity-0" : "opacity-40"
-            )}
-            style={{ touchAction: "none" }}
-          />
+          {/* Textura de papel */}
+          <NoiseOverlay />
 
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-transparent to-gold/5 pointer-events-none" />
+          {/* Cartão do convite com moldura azul dupla */}
+          <motion.div
+            initial={{ opacity: 0, y: reducedMotion ? 0 : 24, scale: reducedMotion ? 1 : 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: reducedMotion ? 0.2 : 1, ease }}
+            className="relative w-full max-w-md mx-auto my-auto"
+          >
+            {/* Moldura externa + interna */}
+            <div
+              className="relative flex flex-col items-center text-center px-6 py-10 sm:px-10 sm:py-12"
+              style={{
+                border: `1.5px solid ${NAVY}`,
+                boxShadow: `inset 0 0 0 6px rgba(250,249,247,1), inset 0 0 0 7.5px ${GOLD}33`,
+              }}
+            >
+              {/* Cantos ornamentais */}
+              <FrameCorner className="absolute top-1.5 left-1.5 w-12 h-12 sm:w-14 sm:h-14" />
+              <FrameCorner className="absolute top-1.5 right-1.5 w-12 h-12 sm:w-14 sm:h-14 -scale-x-100" />
+              <FrameCorner className="absolute bottom-1.5 left-1.5 w-12 h-12 sm:w-14 sm:h-14 -scale-y-100" />
+              <FrameCorner className="absolute bottom-1.5 right-1.5 w-12 h-12 sm:w-14 sm:h-14 -scale-100" />
 
-          <AnimatePresence mode="wait">
-            {step === 0 && (
+              {/* Monograma */}
               <motion.div
-                key="logo-first"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, filter: "blur(20px)", transition: { duration: reducedMotion ? 0.2 : 0.8 } }}
-                className="flex flex-col items-center justify-center w-full h-full relative"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: reducedMotion ? 0.2 : 1.5, ease: "easeOut" }}
-                  className="relative w-64 h-64 md:w-80 md:h-80"
-                >
-                  <Image
-                    src="/matheus-isadora-monogram_gold_trim.png"
-                    alt="Logo"
-                    fill
-                    sizes="(max-width: 768px) 256px, 320px"
-                    className="object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]"
-                    priority
-                    referrerPolicy="no-referrer"
-                  />
-                </motion.div>
-              </motion.div>
-            )}
-
-            {step === 1 && (
-              <motion.div
-                key="cathedral-hero"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, filter: "blur(10px)", transition: { duration: reducedMotion ? 0.2 : 1.0 } }}
-                className="flex flex-col items-center justify-center w-full h-full relative"
-              >
-                <div className="relative w-[380px] h-[380px] md:w-[650px] md:h-[650px] flex items-center justify-center transform-gpu will-change-transform">
-                  <CathedralSVG reduced={reducedMotion} />
-                </div>
-              </motion.div>
-            )}
-
-            {step === 2 && (
-              <motion.div
-                key="cathedral-photo"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: reducedMotion ? 0.2 : 1.5 }}
-                className="absolute inset-0 w-full h-full cursor-pointer"
+                initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: d(0.25), duration: reducedMotion ? 0.2 : 0.9, ease }}
+                className="relative w-24 h-24 sm:w-28 sm:h-28 mb-2"
               >
                 <Image
-                  src="/catedral-brasilia.png"
-                  alt="Catedral de Brasilia"
+                  src="/matheus-isadora-monogram_gold_trim.png"
+                  alt="Monograma de Isadora e Matheus"
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 640px) 96px, 112px"
+                  className="object-contain"
                   priority
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none" />
-
-                <motion.div
-                  className="absolute bottom-12 inset-x-0 w-full flex justify-center text-white/70 font-label tracking-widest text-sm uppercase pointer-events-auto"
-                  animate={reducedMotion ? { opacity: 1 } : { opacity: [0.3, 1, 0.3] }}
-                  transition={reducedMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.5 }}
-                >
-                  <div className="bg-black/40 px-6 py-2 rounded-full border border-white/20 backdrop-blur-md">
-                    Toque para iniciar
-                  </div>
-                </motion.div>
               </motion.div>
-            )}
-          </AnimatePresence>
+
+              {/* Save the date */}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: d(0.4), duration: reducedMotion ? 0.2 : 0.8 }}
+                className="font-label text-[10px] sm:text-xs uppercase tracking-[0.35em] mb-3"
+                style={{ color: NAVY }}
+              >
+                Save the Date
+              </motion.span>
+
+              {/* Nomes em script */}
+              <motion.h1
+                initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: d(0.5), duration: reducedMotion ? 0.2 : 1, ease }}
+                className="font-alex-brush leading-none mb-1"
+                style={{ color: NAVY_DEEP, fontSize: "clamp(2.75rem, 12vw, 4.25rem)" }}
+              >
+                Isadora &amp; Matheus
+              </motion.h1>
+
+              {/* Linha decorativa */}
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "60%", opacity: 1 }}
+                transition={{ delay: d(0.7), duration: reducedMotion ? 0.2 : 0.9, ease }}
+                className="h-px my-4"
+                style={{ background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)` }}
+              />
+
+              {/* Data + local */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: d(0.8), duration: reducedMotion ? 0.2 : 0.8 }}
+                className="flex flex-col items-center gap-1 mb-5"
+              >
+                <span
+                  className="font-label text-sm sm:text-base tracking-[0.3em]"
+                  style={{ color: NAVY }}
+                >
+                  03 . 09 . 2026
+                </span>
+                <span
+                  className="font-label text-[10px] uppercase tracking-[0.3em]"
+                  style={{ color: NAVY, opacity: 0.7 }}
+                >
+                  Brasília, DF
+                </span>
+              </motion.div>
+
+              {/* Ilustração em aquarela (Catedral) */}
+              <motion.div
+                initial={{ opacity: 0, y: reducedMotion ? 0 : 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: d(0.9), duration: reducedMotion ? 0.2 : 1, ease }}
+                className="relative w-full h-40 sm:h-48 mb-7"
+              >
+                <Image
+                  src="/catedral-brasilia.png"
+                  alt="Catedral de Brasília em aquarela"
+                  fill
+                  sizes="(max-width: 640px) 320px, 400px"
+                  className="object-contain"
+                  priority
+                  referrerPolicy="no-referrer"
+                />
+              </motion.div>
+
+              {/* Botao unico: orienta o convidado sobre o RSVP personalizado. */}
+              <motion.button
+                initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: d(1.05), duration: reducedMotion ? 0.2 : 0.9, ease }}
+                onClick={handleEnter}
+                whileHover={reducedMotion ? undefined : { scale: 1.03 }}
+                whileTap={reducedMotion ? undefined : { scale: 0.98 }}
+                className="font-label text-[11px] sm:text-xs uppercase tracking-[0.3em] px-10 py-4 rounded-full transition-colors duration-300"
+                style={{
+                  color: NAVY_DEEP,
+                  border: `1px solid ${NAVY}`,
+                  boxShadow: `inset 0 0 0 1px ${GOLD}33`,
+                  background: "rgba(255,255,255,0.4)",
+                }}
+                aria-label="Como confirmar presenca"
+              >
+                Como confirmar
+              </motion.button>
+
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: d(1.2), duration: reducedMotion ? 0.2 : 0.8 }}
+                className="font-label text-[9px] uppercase tracking-[0.3em] mt-4"
+                style={{ color: NAVY, opacity: 0.55 }}
+              >
+                Toque para entrar
+              </motion.span>
+            </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
