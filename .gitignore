@@ -6,3 +6,6 @@ coverage/
 .env*
 !.env.example
 !firebase-applet-config.example.json
+
+# PDFs de convite gerados (gerados localmente pelo scripts/generate-invite.mjs)
+convites/
