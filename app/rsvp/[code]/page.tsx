@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SwipeToConfirm } from "@/components/SwipeToConfirm";
 import { motion, AnimatePresence } from "motion/react";
-import { useAppStore } from "@/lib/store/useAppStore";
 import { db, ensureAnonymousAuth } from "@/lib/firebase";
 import { doc, getDoc, query, collection, where, getDocs, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -40,7 +39,6 @@ const Monogram = ({ className = "" }: { className?: string }) => (
 function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setHomeState } = useAppStore();
 
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [familyId, setFamilyId] = useState<string>("");
@@ -138,10 +136,14 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
       );
 
       setLoadingState("success");
-      setHomeState("ANIMATING_LOADING");
 
       setTimeout(() => {
-        router.push("/");
+        // Navegação "hard" em vez de router.push (SPA): WebViews in-app
+        // (WhatsApp/Instagram) frequentemente não completam a navegação por
+        // history API, deixando a tela travada. Uma carga de página inteira é
+        // confiável e ainda dispara a intro completa (o store reinicia em
+        // ANIMATING_LOADING numa carga nova).
+        window.location.assign("/");
       }, 1200);
     } catch (error) {
       console.error("RSVP confirm error:", error);

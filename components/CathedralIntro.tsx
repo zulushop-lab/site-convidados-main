@@ -44,6 +44,11 @@ export const CathedralIntro = () => {
 
       if (reducedMotion || browserReducedMotion || !canvasRef.current || typeof window === "undefined") return;
 
+      // O efeito de tubos é puramente decorativo. Em produção a CSP estrita
+      // (sem 'unsafe-eval') bloqueia o `new Function` usado pelo bundle do
+      // threejs-components, o que lançaria erro já na avaliação do módulo
+      // importado. Envolvemos TODO o caminho (incl. o import dinâmico) para
+      // que qualquer falha apenas seja logada e nunca derrube a intro/home.
       try {
         const threeModule = await import("threejs-components/build/cursors/tubes1.min.js");
         const TubesCursor = threeModule.default;

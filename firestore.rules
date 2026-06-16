@@ -45,7 +45,10 @@ service cloud.firestore {
     }
 
     match /rsvps/{rsvpId} {
-      allow create: if isSignedIn() && isValidRSVP(incoming());
+      // O doc usa o familyId como ID, então re-confirmar a mesma família é um
+      // update (setDoc sobre doc existente). Permitimos update com a mesma
+      // validação para a família poder corrigir quem vai até a data do evento.
+      allow create, update: if isSignedIn() && isValidRSVP(incoming());
       allow read: if isAdmin();
       allow list: if isAdmin();
     }
