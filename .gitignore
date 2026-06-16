@@ -9,3 +9,13 @@ coverage/
 
 # PDFs de convite gerados (gerados localmente pelo scripts/generate-invite.mjs)
 convites/
+
+# Caches/artefatos do gerador de convite (scripts/generate-invite.mjs).
+# .cathedral-small.png e .alex-brush.ttf sao recriados sob demanda pelo script
+# (de public/catedral-brasilia.png e do Google Fonts); os demais sao artefatos
+# orfaos. Nenhum e fonte versionavel — ficam locais.
+scripts/.cathedral-small.png
+scripts/.cathedral-bg.png
+scripts/.alex-brush.ttf
+scripts/.corner-ornament.svg
+scripts/.monogram-b64.txt
