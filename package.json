@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint .",
     "test:rules:baseline": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-baseline.mjs",
-    "test:rules:hardened": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-hardened.mjs"
+    "test:rules:hardened": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-hardened.mjs",
+    "seed:gifts": "node scripts/seed-gifts.mjs",
+    "seed:families": "node scripts/seed-families.mjs"
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
