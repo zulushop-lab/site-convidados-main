@@ -4,18 +4,15 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SwipeToConfirm } from "@/components/SwipeToConfirm";
+import { CathedralReveal } from "@/components/CathedralReveal";
 import { motion, AnimatePresence } from "motion/react";
 import { db, ensureAnonymousAuth } from "@/lib/firebase";
+import { markSkipCover } from "@/lib/store/useAppStore";
+import { useGuest } from "@/lib/context/GuestContext";
+import type { Guest } from "@/domain/types";
 import { doc, getDoc, query, collection, where, getDocs, setDoc, serverTimestamp } from "firebase/firestore";
 
 type LoadingState = "loading" | "ready" | "confirming" | "success" | "error";
-
-interface Guest {
-  id: string;
-  name: string;
-  familyId: string;
-  isMainGuest: boolean;
-}
 
 const Monogram = ({ className = "" }: { className?: string }) => (
   <motion.div
@@ -39,6 +36,7 @@ const Monogram = ({ className = "" }: { className?: string }) => (
 function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setIdentity, selectGuest } = useGuest();
 
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [familyId, setFamilyId] = useState<string>("");
@@ -74,7 +72,8 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
           setLoadingState("error");
           return;
         }
-        setFamilyName(familyDoc.data().name);
+        const loadedFamilyName = String(familyDoc.data().name ?? "Sua familia");
+        setFamilyName(loadedFamilyName);
 
         // Lookup: guests where familyId == fId
         const guestsSnapshot = await getDocs(
@@ -93,8 +92,22 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
         const preselected = searchParams.get("c");
         if (preselected && guestsList.some((g) => g.id === preselected)) {
           setSelectedIds([preselected]);
+          setIdentity({
+            familyId: fId,
+            familyName: loadedFamilyName,
+            guests: guestsList,
+            guestId: preselected,
+            source: "hint",
+          });
         } else {
           setSelectedIds(guestsList.map((g) => g.id));
+          setIdentity({
+            familyId: fId,
+            familyName: loadedFamilyName,
+            guests: guestsList,
+            guestId: null,
+            source: null,
+          });
         }
 
         setLoadingState("ready");
@@ -106,7 +119,7 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
     };
 
     initRSVP();
-  }, [params, searchParams]);
+  }, [params, searchParams, setIdentity]);
 
   const toggleGuest = (id: string) => {
     setSelectedIds((prev) =>
@@ -135,21 +148,26 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
         { merge: false }
       );
 
-      setLoadingState("success");
+      selectGuest(selectedIds[0], "roster");
 
-      setTimeout(() => {
-        // Navegação "hard" em vez de router.push (SPA): WebViews in-app
-        // (WhatsApp/Instagram) frequentemente não completam a navegação por
-        // history API, deixando a tela travada. Uma carga de página inteira é
-        // confiável e ainda dispara a intro completa (o store reinicia em
-        // ANIMATING_LOADING numa carga nova).
-        window.location.assign("/");
-      }, 1200);
+      // success monta o CathedralReveal (animação 3D + áudio). A navegação para
+      // a home acontece só quando a animação termina (handleRevealComplete).
+      setLoadingState("success");
     } catch (error) {
       console.error("RSVP confirm error:", error);
       setErrorMessage("Não foi possível confirmar. Tente novamente.");
       setLoadingState("ready");
     }
+  };
+
+  const handleRevealComplete = () => {
+    // A 3D já tocou aqui; marca para a home pular a capa CathedralIntro.
+    markSkipCover();
+    // Navegação "hard" em vez de router.push (SPA): WebViews in-app
+    // (WhatsApp/Instagram) frequentemente não completam a navegação por
+    // history API, deixando a tela travada. Uma carga de página inteira é
+    // confiável.
+    window.location.assign("/");
   };
 
   const allSelected = guests.length > 0 && selectedIds.length === guests.length;
@@ -165,6 +183,14 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
       {/* Atmosfera de fundo (consistente com a IntroAnimation) */}
       <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-transparent to-gold/5 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.04),transparent_70%)] pointer-events-none" />
+
+      {/* Recompensa cinematográfica: ao confirmar (success), a animação 3D da
+          Catedral roda em overlay full-screen e, ao terminar (~7,2s), leva o
+          convidado à home (handleRevealComplete). */}
+      <CathedralReveal
+        play={loadingState === "success"}
+        onComplete={handleRevealComplete}
+      />
 
       <AnimatePresence mode="wait">
         {loadingState === "loading" && (
@@ -342,7 +368,7 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
               transition={{ delay: 0.7, duration: 0.8 }}
               className="font-body text-white/50 text-sm mt-2"
             >
-              Entrando no portal…
+              Preparando seu portal…
             </motion.p>
           </motion.div>
         )}

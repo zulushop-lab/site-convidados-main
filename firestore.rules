@@ -11,13 +11,24 @@ service cloud.firestore {
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
-    function isAdmin() { 
+    function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'matheusrs180@gmail.com' && request.auth.token.email_verified == true
       );
     }
 
+    // ENUM de status (contributions/tieBids): pending -> processing -> completed|failed.
+    // Estados terminais (completed/failed) nao transicionam. Cliente cria apenas 'pending';
+    // promocao de status e exclusiva do servidor (Admin SDK, que ignora rules) — a regra
+    // de update existe como defesa em profundidade contra um cliente promovendo status.
+    function isValidStatusTransition(from, to) {
+      return (from == 'pending'    && (to == 'processing' || to == 'completed' || to == 'failed')) ||
+             (from == 'processing' && (to == 'completed' || to == 'failed'));
+    }
+
     // Identity Collections (codes, families, guests)
+    // Leitura por ID apenas (conhecer o code/familyId e a barreira); list e admin-only
+    // para nao vazar enumeracao de convites.
     match /codes/{code} {
       allow get: if true;
       allow list, write: if isAdmin();
@@ -34,20 +45,31 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // RSVP Validation
+    // RSVP Validation — contrato do writer real (app/rsvp/[code]/page.tsx):
+    // adults e o numero de confirmantes (int), attendees a lista de guestIds,
+    // confirmedBy o guestId de quem confirmou. dietary/message/updatedBy/updatedAt
+    // sao opcionais (com caps) para suportar edicao futura sem churn de rules.
     function isValidRSVP(data) {
       return data.familyId is string && isValidId(data.familyId) &&
              data.confirmedBy is string && isValidId(data.confirmedBy) &&
-             data.attendees is list &&
-             data.adults is int && data.adults >= 0 &&
-             data.childrenCount is int && data.childrenCount >= 0 &&
-             data.createdAt == request.time;
+             data.attendees is list && data.attendees.size() <= 20 &&
+             data.adults is int && data.adults >= 0 && data.adults <= 20 &&
+             data.childrenCount is int && data.childrenCount >= 0 && data.childrenCount <= 20 &&
+             data.createdAt == request.time &&
+             (!('dietary' in data) || (data.dietary is string && data.dietary.size() <= 1000)) &&
+             (!('message' in data) || (data.message is string && data.message.size() <= 1000)) &&
+             (!('updatedBy' in data) || isValidId(data.updatedBy)) &&
+             (!('updatedAt' in data) || data.updatedAt == request.time) &&
+             data.keys().hasOnly([
+               'familyId', 'confirmedBy', 'attendees', 'adults', 'childrenCount',
+               'createdAt', 'dietary', 'message', 'updatedBy', 'updatedAt'
+             ]);
     }
 
     match /rsvps/{rsvpId} {
-      // O doc usa o familyId como ID, então re-confirmar a mesma família é um
+      // O doc usa o familyId como ID, entao re-confirmar a mesma familia e um
       // update (setDoc sobre doc existente). Permitimos update com a mesma
-      // validação para a família poder corrigir quem vai até a data do evento.
+      // validacao para a familia poder corrigir quem vai ate a data do evento.
       allow create, update: if isSignedIn() && isValidRSVP(incoming());
       allow read: if isAdmin();
       allow list: if isAdmin();
@@ -67,16 +89,33 @@ service cloud.firestore {
       allow write: if isAdmin() && isValidGift(incoming());
     }
 
-    // Contribution Validation
+    // Contribution Validation — cliente cria SOMENTE 'pending'; teto de R$ 100.000
+    // (BRL decimal, casa com Mercado Pago); donorEmail obrigatorio; hasOnly trava
+    // campos extras. isSignedIn() exige sessao (Anonymous Auth no boot).
     function isValidContribution(data) {
-      return data.amount is number && data.amount > 0 &&
-             data.donorName is string && data.donorName.size() <= 200 &&
-             data.status in ['pending', 'completed'] &&
-             data.createdAt == request.time;
+      return data.amount is number && data.amount > 0 && data.amount <= 100000 &&
+             data.giftTitle is string && data.giftTitle.size() <= 200 &&
+             data.donorName is string && data.donorName.size() > 0 && data.donorName.size() <= 200 &&
+             data.donorEmail is string && data.donorEmail.size() > 0 && data.donorEmail.size() <= 200 &&
+             data.paymentMethod is string &&
+             data.status == 'pending' &&
+             data.createdAt == request.time &&
+             (!('familyId' in data) || isValidId(data.familyId)) &&
+             (!('guestId' in data) || isValidId(data.guestId)) &&
+             data.keys().hasOnly([
+               'amount', 'giftTitle', 'donorName', 'donorEmail', 'paymentMethod',
+               'status', 'createdAt', 'familyId', 'guestId'
+             ]);
     }
 
     match /contributions/{contribId} {
-      allow create: if isValidContribution(incoming());
+      allow create: if isSignedIn() && isValidContribution(incoming());
+      // Promocao de status: somente admin/servidor, transicao valida do ENUM,
+      // createdAt imutavel. (O webhook MP usa Admin SDK e ignora rules; esta
+      // regra barra qualquer cliente de promover status.)
+      allow update: if isAdmin() &&
+                       isValidStatusTransition(existing().status, incoming().status) &&
+                       incoming().createdAt == existing().createdAt;
       allow read: if isAdmin();
       allow list: if isAdmin();
     }
@@ -84,7 +123,7 @@ service cloud.firestore {
     // TieBid Validation (Gravata do Noivo)
     // Cliente cria apenas 'pending'; promocao de status e exclusiva do servidor (Admin SDK).
     function isValidTieBid(data) {
-      return data.amount is number && data.amount > 0 &&
+      return data.amount is number && data.amount > 0 && data.amount <= 100000 &&
              data.status == 'pending' &&
              data.createdAt == request.time &&
              (data.message == null || (data.message is string && data.message.size() <= 500)) &&
@@ -94,9 +133,18 @@ service cloud.firestore {
 
     match /tieBids/{bidId} {
       allow create: if isSignedIn() && isValidTieBid(incoming());
-      allow update: if isAdmin();
+      allow update: if isAdmin() &&
+                       isValidStatusTransition(existing().status, incoming().status);
       // Leaderboard publico real so apos leaderboards/* derivados (SPEC-GRAVATA completa).
+      // Por privacidade, lances brutos ficam admin-only; a Home le os agregados.
       allow read, list: if isAdmin();
+    }
+
+    // Leaderboards derivados (SPEC-GRAVATA-LEADERBOARD) — leitura barata e publica
+    // na Home; escrita exclusiva do servidor/Admin SDK (webhook de agregacao).
+    match /leaderboards/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

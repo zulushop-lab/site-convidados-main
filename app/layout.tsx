@@ -28,6 +28,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { FloatingBackground } from '@/components/FloatingBackground';
 import { GlobalNavigationOptions } from '@/components/GlobalMenu';
+import { AuthProvider } from '@/lib/context/AuthContext';
+import { GuestProvider } from '@/lib/context/GuestContext';
 
 import { GlobalAudioPlayer } from '@/components/GlobalAudioPlayer';
 
@@ -51,15 +53,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning className={`${montserrat.variable} ${cormorant.variable} ${playfair.variable} ${alexBrush.variable}`}>
       <body className="antialiased min-h-[100dvh] flex flex-col font-body">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <GlobalAudioPlayer />
-          <LoadingScreen />
-          <FloatingBackground />
-          <TopNav />
-          <div className="flex-1">
-            {children}
-          </div>
-          <Footer />
-          <GlobalNavigationOptions />
+          <AuthProvider>
+            <GuestProvider>
+              <GlobalAudioPlayer />
+              <LoadingScreen />
+              <FloatingBackground />
+              <TopNav />
+              <div className="flex-1">
+                {children}
+              </div>
+              <Footer />
+              <GlobalNavigationOptions />
+            </GuestProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -23,15 +23,17 @@ export interface Family {
   id: string;
   name: string;
   code: string; // Codigo unico utilizado para acesso via URL (vinda do PDF).
+  phone?: string;
 }
 
 export interface Guest {
   id: string;
   familyId: string;
   name: string;
+  isChild?: boolean;
   phone?: string;
   email?: string;
-  rsvpStatus: RSVPGuestStatus;
+  rsvpStatus?: RSVPGuestStatus;
   isMainGuest?: boolean; // Define se este usuario pode fazer o RSVP pela familia inteira.
 }
 

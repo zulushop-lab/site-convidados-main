@@ -45,11 +45,14 @@ const contribution = (overrides = {}) => ({
   ...overrides,
 });
 
+// Contrato real do writer (app/rsvp/[code]/page.tsx): adults e o numero de
+// confirmantes (int), attendees a lista de guestIds, confirmedBy o guestId.
 const rsvp = (overrides = {}) => ({
-  adults: ["Matheus", "Isadora"],
+  familyId: "family-1",
+  confirmedBy: "guest-1",
+  attendees: ["guest-1", "guest-2"],
+  adults: 2,
   childrenCount: 0,
-  dietary: "",
-  message: "",
   createdAt: now(),
   ...overrides,
 });
@@ -178,19 +181,35 @@ addTest("hardened: terminal contribution status cannot transition backward", asy
   );
 });
 
-addTest("hardened: valid RSVP with optional identity fields succeeds", async () => {
+addTest("hardened: valid RSVP (real contract) succeeds for signed-in guest", async () => {
   const db = guest().firestore();
 
   await assertSucceeds(
-    db.collection("rsvps").doc("valid-rsvp").set(
-      rsvp({
-        familyId: "family-1",
-        guestId: "guest-1",
-        confirmedBy: "guest-1",
-        updatedBy: "guest-1",
-        updatedAt: now(),
-      }),
-    ),
+    db.collection("rsvps").doc("family-1").set(rsvp()),
+  );
+});
+
+addTest("hardened: anonymous RSVP create is rejected", async () => {
+  const db = testEnv.unauthenticatedContext().firestore();
+
+  await assertFails(
+    db.collection("rsvps").doc("family-1").set(rsvp()),
+  );
+});
+
+addTest("hardened: RSVP requires familyId and confirmedBy", async () => {
+  const db = guest().firestore();
+
+  const noFamily = rsvp();
+  delete noFamily.familyId;
+  await assertFails(
+    db.collection("rsvps").doc("no-family").set(noFamily),
+  );
+
+  const noConfirmedBy = rsvp();
+  delete noConfirmedBy.confirmedBy;
+  await assertFails(
+    db.collection("rsvps").doc("no-confirmed-by").set(noConfirmedBy),
   );
 });
 
@@ -204,12 +223,18 @@ addTest("hardened: RSVP rejects extra fields", async () => {
   );
 });
 
-addTest("hardened: RSVP caps adults and text fields", async () => {
+addTest("hardened: RSVP caps adults/attendees and text fields", async () => {
   const db = guest().firestore();
 
   await assertFails(
     db.collection("rsvps").doc("too-many-adults").set(
-      rsvp({ adults: Array.from({ length: 21 }, (_, index) => `Guest ${index}`) }),
+      rsvp({ adults: 21 }),
+    ),
+  );
+
+  await assertFails(
+    db.collection("rsvps").doc("too-many-attendees").set(
+      rsvp({ attendees: Array.from({ length: 21 }, (_, index) => `guest-${index}`) }),
     ),
   );
 
