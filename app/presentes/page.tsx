@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Banknote, CreditCard, Filter, Search, X, Check, ArrowRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -10,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PageHero } from '@/components/PageHero';
 import { TiltCard } from '@/components/3DTiltCard';
 import { SlideToUnlock } from '@/components/SlideToUnlock';
+import { GiftContributionActions } from '@/components/GiftContributionActions';
 import { GIFT_CATALOG, GIFT_CATEGORIES } from '@/domain/gifts/catalog';
 import type { GiftCatalogItem, GiftCategory } from '@/domain/types';
 
@@ -41,19 +41,6 @@ export default function PresentesPage() {
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9,]/g, '');
     setCustomAmount(value);
-  };
-
-  const handleShortcutClick = (amount: number) => {
-    // Format appropriately with commas
-    setCustomAmount(amount.toFixed(2).replace('.', ','));
-    if (customAmountRef.current) {
-      const offset = 100;
-      const elementPosition = customAmountRef.current.getBoundingClientRect().top + window.pageYOffset;
-      window.scrollTo({
-        top: elementPosition - offset,
-        behavior: 'smooth'
-      });
-    }
   };
 
   const handleCustomContribution = () => {
@@ -220,23 +207,12 @@ export default function PresentesPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link 
-                    href={`/presentes/checkout?amount=${selectedGift.minimumContribution.toFixed(2).replace('.', ',')}&item=${encodeURIComponent(selectedGift.title)}`}
-                    className="flex-1 btn-primary py-5 px-8 flex items-center justify-center gap-3 text-sm font-semibold"
-                  >
-                    Contribuir <ArrowRight className="w-5 h-5" />
-                  </Link>
-                  <button 
-                    onClick={() => {
-                      handleShortcutClick(selectedGift.minimumContribution);
-                      setSelectedGift(null);
-                    }}
-                    className="flex-1 px-8 py-5 border border-outline-variant/30 font-label text-[10px] uppercase tracking-widest hover:bg-surface-container-low transition-colors"
-                  >
-                    Ajustar Valor
-                  </button>
-                </div>
+                <GiftContributionActions
+                  giftTitle={selectedGift.title}
+                  minimum={selectedGift.minimumContribution}
+                  total={selectedGift.referenceTotal}
+                  layout="modal"
+                />
               </div>
             </motion.div>
           </div>
@@ -439,7 +415,7 @@ export default function PresentesPage() {
                               referrerPolicy="no-referrer"
                             />
                             <div className="absolute top-4 left-4 z-10">
-                              <span className="bg-white/95 backdrop-blur-sm px-3 py-1 font-label text-[8px] uppercase tracking-widest text-primary shadow-sm rounded-full">
+                              <span className="bg-gold px-3 py-1 font-label text-[9px] font-semibold uppercase tracking-widest text-white shadow-sm rounded-full">
                                 {gift.category}
                               </span>
                             </div>
@@ -451,14 +427,17 @@ export default function PresentesPage() {
                             </h3>
                             <div className="flex justify-between items-baseline mt-1">
                               <span className="font-label text-[8px] uppercase tracking-wider text-on-surface-variant/70">
-                                Cota mínima
+                                Preço total
                               </span>
                               <span className="font-body text-primary font-bold text-base">
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(gift.minimumContribution)}
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(gift.referenceTotal)}
                               </span>
                             </div>
                             <span className="text-[10px] text-on-surface-variant/60 mt-0.5">
-                              Preço total: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(gift.referenceTotal)}
+                              Cota mínima: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(gift.minimumContribution)}
+                            </span>
+                            <span className="text-[10px] text-primary/70 mt-0.5">
+                              Contribua a partir de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(gift.minimumContribution)}
                             </span>
                           </div>
 
@@ -471,27 +450,12 @@ export default function PresentesPage() {
                               onUnlock={() => {}}
                               sliderText="Deslize para Presentear"
                               unlockedContent={
-                                <div className="flex flex-col gap-3">
-                                  <motion.div whileTap={{ scale: 0.95 }}>
-                                    <Link 
-                                      href={`/presentes/checkout?amount=${gift.minimumContribution.toFixed(2).replace('.', ',')}&item=${encodeURIComponent(gift.title)}`} 
-                                      aria-label={`Contribuir com R$ ${gift.minimumContribution} para ${gift.title}`}
-                                      className="btn-primary w-full py-3 block text-center shadow-lg shadow-primary/10 hover:shadow-primary/30 transition-shadow text-xs font-semibold"
-                                    >
-                                      Contribuir
-                                    </Link>
-                                  </motion.div>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleShortcutClick(gift.minimumContribution);
-                                    }}
-                                    className="w-full py-2.5 border border-outline-variant/30 font-label text-[8px] uppercase tracking-[0.2em] hover:bg-surface-container-low transition-colors rounded-sm"
-                                  >
-                                    Ajustar Valor
-                                  </button>
-                                </div>
+                                <GiftContributionActions
+                                  giftTitle={gift.title}
+                                  minimum={gift.minimumContribution}
+                                  total={gift.referenceTotal}
+                                  layout="card"
+                                />
                               }
                             />
                           </div>
