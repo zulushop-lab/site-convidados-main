@@ -38,21 +38,6 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
-    id: 'pp_03',
-    title: 'Fundo para contas de água e luz',
-    description: 'Para a paz de espírito caso o ar condicionado precise trabalhar mais.',
-    category: 'Primeiros Passos',
-    imageSrc: '/presentes/pp_03.jpg',
-    suggestedAmount: 55,
-    minimumContribution: MINIMUM_CONTRIBUTION,
-    referenceTotal: 529,
-    quotaCount: 10,
-    order: 3,
-    priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:pp_03',
-    priceCheckedAt: PRICE_CHECKED_AT,
-  },
-  {
     id: 'pp_04',
     title: 'Kit Limpeza Extrema',
     description: 'Produtos de limpeza pesada para os dias de faxina.',
@@ -64,7 +49,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 3,
     order: 4,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:pp_04',
+    imageSourceUrl: 'https://www.flickr.com/photos/168245564@N05/48231563162',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -94,7 +79,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 25,
     order: 6,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:pp_06',
+    imageSourceUrl: 'https://www.flickr.com/photos/61174949@N00/3673567823',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -169,7 +154,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 2,
     order: 11,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/8865243@N02/9422077843',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -184,7 +169,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 6,
     order: 12,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/33345813@N00/2419929765',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -199,7 +184,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 12,
     order: 13,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/7202153@N03/51388519295',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -214,7 +199,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 4,
     order: 14,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/7387467@N04/45099716062',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -229,7 +214,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 3,
     order: 15,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/8865243@N02/9406318207',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -244,7 +229,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 5,
     order: 16,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/25509772@N00/4647169120',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -259,7 +244,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 5,
     order: 17,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/56069869@N00/3027669695',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -274,7 +259,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 6,
     order: 18,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.rawpixel.com/image/5943474/free-public-domain-cc0-photo',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -289,7 +274,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 5,
     order: 19,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/95572727@N00/24129711197',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -304,7 +289,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 5,
     order: 20,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/27330325@N08/2722387472',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -319,7 +304,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 3,
     order: 21,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/25056484@N00/470041018',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -334,7 +319,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 10,
     order: 22,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:trancoso',
+    imageSourceUrl: 'https://www.flickr.com/photos/13491639@N00/2807719023',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -349,7 +334,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 15,
     order: 23,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:cs_01',
+    imageSourceUrl: 'https://www.flickr.com/photos/29904699@N00/282268782',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -379,7 +364,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 8,
     order: 25,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:cs_03',
+    imageSourceUrl: 'https://www.flickr.com/photos/154900222@N05/26128230038',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -394,7 +379,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 6,
     order: 26,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:cs_04',
+    imageSourceUrl: 'https://www.flickr.com/photos/11955713@N00/5670943580',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -424,7 +409,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 4,
     order: 28,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'local-generated:cs_06',
+    imageSourceUrl: 'https://www.rawpixel.com/image/5920805/photo-image-public-domain-white-free',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -454,7 +439,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 10,
     order: 30,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078',
+    imageSourceUrl: 'https://www.rawpixel.com/image/6042998/photo-image-public-domain-house-kitchen',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -469,7 +454,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 4,
     order: 31,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1574926053821-79c5e338a933',
+    imageSourceUrl: 'https://www.flickr.com/photos/11121785@N00/121601423',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -484,7 +469,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 4,
     order: 32,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1578643463396-0997cb5328c1',
+    imageSourceUrl: 'https://www.flickr.com/photos/83136374@N05/49907001146',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -499,7 +484,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 6,
     order: 33,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1577140917170-285929fb55b7',
+    imageSourceUrl: 'https://www.flickr.com/photos/49889671@N03/8262326054',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -514,7 +499,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 3,
     order: 34,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1593113630400-ea4288922497',
+    imageSourceUrl: 'https://www.flickr.com/photos/87481332@N00/149291464',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -529,7 +514,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 4,
     order: 35,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1479064555552-3ef4979f8908',
+    imageSourceUrl: 'https://www.rawpixel.com/image/8809317/photo-image-public-domain-product',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
   {
@@ -559,7 +544,7 @@ export const GIFT_CATALOG: GiftCatalogItem[] = [
     quotaCount: 40,
     order: 37,
     priceSourceUrl: PRICE_SOURCE_URL,
-    imageSourceUrl: 'https://images.unsplash.com/photo-1571175432240-62e92bc44a86',
+    imageSourceUrl: 'https://www.flickr.com/photos/66992990@N00/6040059574',
     priceCheckedAt: PRICE_CHECKED_AT,
   },
 ];
