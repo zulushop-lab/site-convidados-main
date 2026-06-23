@@ -4,6 +4,7 @@ import {
   buildPaymentReference,
   createCheckoutPreference,
   hasMpCredentials,
+  readServerEnv,
   type PaymentReferenceKind,
 } from '@/lib/server/mercadopago';
 
@@ -27,15 +28,15 @@ const MESSAGE_MAX = 500;
 const asString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
 function getPublicOrigin(request: Request): string {
-  const configured = process.env.MP_SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  const configured = readServerEnv('MP_SITE_URL') || readServerEnv('NEXT_PUBLIC_SITE_URL');
   if (configured) return configured.replace(/\/+$/, '');
 
   return new URL(request.url).origin;
 }
 
 function getCheckoutUrlMode(): 'sandbox' | 'production' {
-  if (process.env.MP_ENVIRONMENT === 'sandbox') return 'sandbox';
-  if (process.env.MP_ENVIRONMENT === 'production') return 'production';
+  if (readServerEnv('MP_ENVIRONMENT') === 'sandbox') return 'sandbox';
+  if (readServerEnv('MP_ENVIRONMENT') === 'production') return 'production';
 
   return process.env.NODE_ENV === 'production' ? 'production' : 'sandbox';
 }
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
 
   const origin = getPublicOrigin(request);
   const returnBase = `${origin}/presentes/checkout/retorno?kind=${checkoutKind}&id=${docRef.id}`;
-  const notificationUrl = process.env.MP_WEBHOOK_URL || `${origin}/api/webhook/mercadopago`;
+  const notificationUrl = readServerEnv('MP_WEBHOOK_URL') || `${origin}/api/webhook/mercadopago`;
 
   try {
     const preference = await createCheckoutPreference({

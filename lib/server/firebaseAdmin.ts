@@ -19,7 +19,7 @@ type AdminDb = import('firebase-admin/firestore').Firestore;
 let cached: AdminDb | null | undefined;
 
 function readServiceAccount(): Record<string, unknown> | null {
-  const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
   if (base64) {
     try {
       return JSON.parse(Buffer.from(base64, 'base64').toString('utf8'));
@@ -28,7 +28,7 @@ function readServiceAccount(): Record<string, unknown> | null {
       return null;
     }
   }
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
   if (raw) {
     try {
       return JSON.parse(raw);
@@ -66,7 +66,7 @@ export async function getAdminDb(): Promise<AdminDb | null> {
           : applicationDefault(),
       });
 
-    const databaseId = process.env.FIREBASE_DATABASE_ID;
+    const databaseId = process.env.FIREBASE_DATABASE_ID?.trim();
     cached = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
     return cached;
   } catch (error) {

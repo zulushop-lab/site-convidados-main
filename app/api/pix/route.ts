@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { buildPaymentReference, createPixPayment, hasMpCredentials } from '@/lib/server/mercadopago';
+import {
+  buildPaymentReference,
+  createPixPayment,
+  hasMpCredentials,
+  readServerEnv,
+} from '@/lib/server/mercadopago';
 
 export const runtime = 'nodejs';
 
@@ -86,7 +91,7 @@ export async function POST(request: Request) {
       payerEmail: donorEmail,
       payerName: donorName,
       externalReference,
-      notificationUrl: process.env.MP_WEBHOOK_URL,
+      notificationUrl: readServerEnv('MP_WEBHOOK_URL'),
     });
     await docRef.update({ mpPaymentId: pix.mpPaymentId, updatedAt: FieldValue.serverTimestamp() });
 

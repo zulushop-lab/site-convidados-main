@@ -15,8 +15,11 @@ import crypto from 'node:crypto';
 
 const MP_API = 'https://api.mercadopago.com';
 
+export const readServerEnv = (name: string): string | undefined =>
+  process.env[name]?.trim() || undefined;
+
 export function hasMpCredentials(): boolean {
-  return !!process.env.MP_ACCESS_TOKEN;
+  return !!readServerEnv('MP_ACCESS_TOKEN');
 }
 
 export interface CreatePixParams {
@@ -97,7 +100,7 @@ export function parsePaymentReference(externalReference: string): PaymentReferen
  * hasMpCredentials() === true. Lanca em erro de rede/credencial.
  */
 export async function createPixPayment(params: CreatePixParams): Promise<PixResult> {
-  const token = process.env.MP_ACCESS_TOKEN;
+  const token = readServerEnv('MP_ACCESS_TOKEN');
   if (!token) throw new Error('MP_ACCESS_TOKEN ausente.');
 
   const body = {
@@ -142,7 +145,7 @@ export async function createPixPayment(params: CreatePixParams): Promise<PixResu
 export async function createCheckoutPreference(
   params: CreateCheckoutPreferenceParams,
 ): Promise<CheckoutPreferenceResult> {
-  const token = process.env.MP_ACCESS_TOKEN;
+  const token = readServerEnv('MP_ACCESS_TOKEN');
   if (!token) throw new Error('MP_ACCESS_TOKEN ausente.');
 
   const body = {
@@ -197,7 +200,7 @@ export async function getPayment(paymentId: string): Promise<{
   paymentMethodId: string;
   paymentTypeId: string;
 } | null> {
-  const token = process.env.MP_ACCESS_TOKEN;
+  const token = readServerEnv('MP_ACCESS_TOKEN');
   if (!token) throw new Error('MP_ACCESS_TOKEN ausente.');
 
   const res = await fetch(`${MP_API}/v1/payments/${encodeURIComponent(paymentId)}`, {
@@ -224,7 +227,7 @@ export function verifyWebhookSignature(opts: {
   xRequestId: string | null;
   dataId: string | null;
 }): boolean {
-  const secret = process.env.MP_WEBHOOK_SECRET;
+  const secret = readServerEnv('MP_WEBHOOK_SECRET');
   if (!secret || !opts.xSignature || !opts.dataId) return false;
 
   const parts = Object.fromEntries(
