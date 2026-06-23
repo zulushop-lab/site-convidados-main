@@ -7,6 +7,69 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import { PageHero } from '@/components/PageHero';
 import { useRef } from 'react';
 
+const hotelSuggestions = [
+  {
+    name: 'Quality Hotel & Suítes Brasília',
+    href: 'https://www.letsatlantica.com.br/hotel/quality-hotel-e-suites-brasilia',
+    image: '/hoteis/quality-hotel-suites-brasilia.jpg',
+    alt: 'Piscina e fachada do Quality Hotel & Suítes Brasília',
+    imageClassName: '',
+    titleClassName: 'items-end',
+    headingClassName: 'max-w-[92%] text-[1.45rem] sm:text-3xl lg:text-[1.75rem]',
+  },
+  {
+    name: 'Brasília Palace Hotel',
+    href: 'https://www.plazabrasilia.com.br/brasilia-palace',
+    image: '/hoteis/brasilia-palace-hotel.webp',
+    alt: 'Fachada e placa do Brasília Palace Hotel',
+    imageClassName: 'object-[center_100%] md:object-[center_62%]',
+    titleClassName: 'items-end',
+    headingClassName: 'max-w-[38%] text-[1.45rem] sm:text-3xl lg:text-[1.75rem]',
+  },
+  {
+    name: 'Hotel Royal Tulip Brasília Alvorada',
+    href: 'https://royal-tulip-brasilia-alvorada.goldentulip.com/pt-br/',
+    image: '/hoteis/royal-tulip-brasilia-alvorada.jpg',
+    alt: 'Piscina e fachada do Hotel Royal Tulip Brasília Alvorada',
+    imageClassName: '',
+    titleClassName: 'items-end',
+    headingClassName: 'max-w-[92%] text-[1.45rem] sm:text-3xl lg:text-[1.75rem]',
+  },
+] as const;
+
+function HotelCard({ hotel }: { hotel: (typeof hotelSuggestions)[number] }) {
+  return (
+    <motion.a
+      href={hotel.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Abrir site do hotel ${hotel.name}`}
+      whileHover={{
+        scale: 1.025,
+        boxShadow: "0 24px 60px -20px rgba(0, 0, 0, 0.55)",
+      }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="relative block group/hotel overflow-hidden h-[180px] sm:h-[200px] md:h-[180px] xl:h-[190px] rounded-sm shadow-md bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+    >
+      <ImageWithSkeleton
+        src={hotel.image}
+        alt={hotel.alt}
+        fill
+        quality={90}
+        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className={`object-cover brightness-[0.58] grayscale-[0.12] transition-all duration-700 group-hover/hotel:scale-110 group-hover/hotel:brightness-[0.78] ${hotel.imageClassName}`}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent transition-opacity duration-500 group-hover/hotel:opacity-95" />
+      <div className={`absolute inset-0 flex p-5 sm:p-6 ${hotel.titleClassName}`}>
+        <h4 className={`${hotel.headingClassName} font-headline italic text-white leading-tight drop-shadow-lg`}>
+          {hotel.name}
+        </h4>
+      </div>
+    </motion.a>
+  );
+}
+
 export default function EventosPage() {
   const attireRef = useRef<HTMLDivElement>(null);
   const hotelsRef = useRef<HTMLDivElement>(null);
@@ -36,9 +99,7 @@ export default function EventosPage() {
   });
 
   const yAttire = useTransform(attireScroll, [0, 1], ["-12%", "12%"]);
-  const yHotels = useTransform(hotelsScroll, [0, 1], ["-12%", "12%"]);
   const scaleAttire = useTransform(attireScroll, [0, 1], [1.15, 1.05]);
-  const scaleHotels = useTransform(hotelsScroll, [0, 1], [1.15, 1.05]);
   const yTextAttire = useTransform(attireScroll, [0, 1], [20, -20]);
   const yTextHotels = useTransform(hotelsScroll, [0, 1], [20, -20]);
 
@@ -375,30 +436,19 @@ export default function EventosPage() {
             ref={hotelsRef}
             initial={{ opacity: 0, y: 60, scale: 0.96, filter: 'blur(12px)' }}
             whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            whileHover={{ y: -12 }}
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 1.4, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden group min-h-[420px] sm:min-h-[480px] md:min-h-[520px] flex flex-col justify-end p-8 sm:p-12 md:p-16 rounded-sm shadow-md transition-all duration-500 hover:shadow-2xl"
+            className="relative flex flex-col justify-center"
           >
-            <motion.div 
-              style={{ y: yHotels, scale: scaleHotels }}
-              className="absolute inset-0 -z-10 h-[140%] w-full"
-            >
-              <ImageWithSkeleton
-                src="/imagem-1.jpg"
-                alt="Hotéis"
-                fill
-                quality={90}
-                className="object-cover brightness-[0.6] grayscale-[0.2] transition-all duration-1000 group-hover:brightness-[0.8] group-hover:scale-110"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                referrerPolicy="no-referrer"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <motion.div style={{ y: yTextHotels }} className="relative z-10 mb-8">
+              <span className="font-label uppercase tracking-[0.3rem] text-[9px] sm:text-[11px] text-secondary/60 mb-6 block border-l border-outline/40 pl-4">Hospedagem</span>
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-headline italic text-primary leading-tight">Sugestões Locais</h3>
+              <p className="mt-6 text-on-surface-variant font-body text-sm sm:text-base leading-relaxed max-w-md">Para sua maior comodidade, selecionamos algumas opções de hotéis próximos ao evento com excelente custo-benefício e localização privilegiada.</p>
             </motion.div>
-            <motion.div style={{ y: yTextHotels }} className="relative z-10">
-              <span className="font-label uppercase tracking-[0.3rem] text-[9px] sm:text-[11px] text-white/60 mb-6 block border-l border-white/30 pl-4">Hospedagem</span>
-              <h3 className="text-3xl sm:text-4xl md:text-5xl font-headline italic text-white leading-tight drop-shadow-lg">Sugestões Locais</h3>
-              <p className="mt-6 text-white/80 font-body text-sm sm:text-base leading-relaxed max-w-md drop-shadow-md">Para sua maior comodidade, selecionamos algumas opções de hotéis próximos ao evento com excelente custo-benefício e localização privilegiada.</p>
+            <motion.div className="grid grid-cols-1 gap-4">
+              {hotelSuggestions.map((hotel) => (
+                <HotelCard key={hotel.name} hotel={hotel} />
+              ))}
             </motion.div>
           </motion.div>
         </div>
