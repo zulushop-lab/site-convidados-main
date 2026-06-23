@@ -60,10 +60,10 @@ const rsvp = (overrides = {}) => ({
 const tests = [];
 const addTest = (name, run) => tests.push({ name, run });
 
-addTest("hardened: valid pending contribution succeeds for signed-in guest", async () => {
+addTest("hardened: client cannot create contribution records directly", async () => {
   const db = guest().firestore();
 
-  await assertSucceeds(
+  await assertFails(
     db.collection("contributions").doc("valid-pending").set(contribution()),
   );
 });
@@ -123,6 +123,19 @@ addTest("hardened: contribution rejects extra fields", async () => {
     db.collection("contributions").doc("extra-field").set(
       contribution({ injectedField: "must-fail" }),
     ),
+  );
+});
+
+addTest("hardened: client cannot create tieBid records directly", async () => {
+  const db = guest().firestore();
+
+  await assertFails(
+    db.collection("tieBids").doc("bid-pending").set({
+      amount: 150,
+      message: "Que venca a familia mais animada!",
+      status: "pending",
+      createdAt: now(),
+    }),
   );
 });
 

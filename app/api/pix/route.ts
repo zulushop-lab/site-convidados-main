@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { createPixPayment, hasMpCredentials } from '@/lib/server/mercadopago';
+import { buildPaymentReference, createPixPayment, hasMpCredentials } from '@/lib/server/mercadopago';
 
 export const runtime = 'nodejs';
 
@@ -8,9 +8,8 @@ export const runtime = 'nodejs';
  * POST /api/pix — cria a contribuicao 'pending' (Admin SDK) e gera o Pix
  * dinamico no Mercado Pago (SPEC-PAYMENTS-MP RT-3).
  *
- * Modo simulado (sem credenciais MP e/ou sem service account): NAO chama o MP,
- * retorna { simulated: true, status: 'pending', qrCode: null } e loga o aviso.
- * Nunca quebra a navegacao por falta de chave.
+ * Esta rota legada so pode criar Pix real no Mercado Pago. Sem credenciais,
+ * falha explicitamente para nao registrar pagamento financeiro simulado.
  */
 
 interface PixBody {
@@ -54,20 +53,17 @@ export async function POST(request: Request) {
   const adminDb = await getAdminDb();
   const credentials = hasMpCredentials();
 
-  // Sem infra server (Admin SDK) nao ha onde persistir 'pending' de forma segura.
   if (!adminDb) {
-    console.log('[MP] modo simulado: credenciais ausentes (sem Admin SDK).');
-    return NextResponse.json({
-      contributionId: null,
-      qrCodeBase64: null,
-      qrCode: null,
-      status: 'pending',
-      simulated: true,
-    });
+    return NextResponse.json({ error: 'Firebase Admin SDK nao configurado.' }, { status: 503 });
+  }
+
+  if (!credentials) {
+    return NextResponse.json({ error: 'Mercado Pago nao configurado.' }, { status: 503 });
   }
 
   // Cria a contribuicao 'pending' (servidor e a fonte da verdade do status).
   const docRef = adminDb.collection('contributions').doc();
+  const externalReference = buildPaymentReference('contribution', docRef.id);
   const { FieldValue } = await import('firebase-admin/firestore');
   const base = {
     amount,
@@ -76,23 +72,11 @@ export async function POST(request: Request) {
     donorEmail,
     paymentMethod: 'pix',
     status: 'pending',
-    externalReference: docRef.id,
+    externalReference,
     createdAt: FieldValue.serverTimestamp(),
     ...(asString(body.familyId) ? { familyId: asString(body.familyId) } : {}),
     ...(asString(body.guestId) ? { guestId: asString(body.guestId) } : {}),
   };
-
-  if (!credentials) {
-    console.log('[MP] modo simulado: credenciais ausentes (Pix nao emitido).');
-    await docRef.set(base);
-    return NextResponse.json({
-      contributionId: docRef.id,
-      qrCodeBase64: null,
-      qrCode: null,
-      status: 'pending',
-      simulated: true,
-    });
-  }
 
   try {
     await docRef.set(base);
@@ -101,7 +85,7 @@ export async function POST(request: Request) {
       description: item,
       payerEmail: donorEmail,
       payerName: donorName,
-      externalReference: docRef.id,
+      externalReference,
       notificationUrl: process.env.MP_WEBHOOK_URL,
     });
     await docRef.update({ mpPaymentId: pix.mpPaymentId, updatedAt: FieldValue.serverTimestamp() });
@@ -111,7 +95,6 @@ export async function POST(request: Request) {
       qrCodeBase64: pix.qrCodeBase64,
       qrCode: pix.qrCode,
       status: 'pending',
-      simulated: false,
     });
   } catch (error) {
     console.error('[MP] Falha ao criar Pix:', error);

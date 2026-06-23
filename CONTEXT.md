@@ -6,7 +6,7 @@
 * **Carrinho da Felicidade**: Nomenclatura oficial para o carrinho de compras da aplicação. Focado em atrito mínimo.
 * **Gravata do Noivo (Leilão Online)**: Entidade independente do domínio. Consiste em uma experiência gamificada de arrecadação de fundos. Possui roteamento próprio aninhado na seção de presentes (ex: `/presentes/gravata`). (Detalhes detalhados do modelo de domínio pendentes).
 * **Lance na Gravata**: Ação/Call-to-action ("Dê um lance na gravata") que aciona a contribuição para a gamificação da gravata.
-* **Provedor de Pagamento**: PagSeguro (com possibilidade de uso de OAuth para facilitação de dados).
+* **Provedor de Pagamento**: Mercado Pago via Checkout Pro. Presentes e lances da Gravata do Noivo são iniciados pelo backend, pagos no ambiente do Mercado Pago e confirmados por webhook antes de entrarem como `completed`.
 * **Autenticação Base (RSVP-First)**: Estratégia de fluxo onde o acesso à plataforma principal (Home, Presentes) exige prévia identificação/auth via rota de RSVP e Convite.
 * **Swipe-to-Confirm (Componente UI)**: Botão de confirmação de presença (arraste esquerda para direita, com fading granular do nome durante o arrasto, e snap-back automático). Traz estética de glasmorphism / liquid glass com atrito lúdico e mínimo.
 * **Home "Experience N2N"**: A página inicial funciona como um agregador sequencial ("End-to-End"), onde o scrolling conta a história e condensa o acesso prático ao resto do site com baixa fricção.

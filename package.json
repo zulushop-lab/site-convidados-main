@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "tunnel:cloudflare": "cloudflared tunnel --url http://localhost:3000",
+    "tunnel:ngrok": "ngrok http 3000",
     "test:rules:baseline": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-baseline.mjs",
     "test:rules:hardened": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-hardened.mjs",
     "seed:gifts": "node scripts/seed-gifts.mjs",

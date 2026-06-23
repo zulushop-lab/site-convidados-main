@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
  * (SPEC-PAYMENTS-MP RT-5). O cliente nao le `contributions` direto (rules
  * admin-only); le aqui via Admin SDK. Nao expoe PII alem do status.
  *
- * Modo simulado (sem Admin SDK): retorna status 'pending' + simulated:true.
+ * Sem Admin SDK, falha explicitamente; status financeiro nao pode ser simulado.
  */
 
 export async function GET(
@@ -22,7 +22,7 @@ export async function GET(
 
   const adminDb = await getAdminDb();
   if (!adminDb) {
-    return NextResponse.json({ status: 'pending', simulated: true });
+    return NextResponse.json({ error: 'Firebase Admin SDK nao configurado.' }, { status: 503 });
   }
 
   const snap = await adminDb.collection('contributions').doc(contributionId).get();

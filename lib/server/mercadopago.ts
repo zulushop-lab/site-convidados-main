@@ -8,7 +8,7 @@
  * Usa a API REST via fetch (sem dependencia `mercadopago`, evitando peso no
  * bundle server). Le MP_ACCESS_TOKEN / MP_WEBHOOK_SECRET de process.env
  * (NUNCA NEXT_PUBLIC_*). Quando o token esta ausente, hasMpCredentials() e
- * false e o chamador entra em "modo simulado" (a spec exige degradacao honesta).
+ * false e o chamador deve falhar explicitamente antes de iniciar pagamento.
  */
 
 import crypto from 'node:crypto';
@@ -33,6 +33,63 @@ export interface PixResult {
   status: string;
   qrCodeBase64: string | null;
   qrCode: string | null;
+}
+
+export type PaymentReferenceKind = 'contribution' | 'tieBid';
+
+export interface PaymentReference {
+  kind: PaymentReferenceKind;
+  collection: 'contributions' | 'tieBids';
+  docId: string;
+}
+
+export interface CheckoutBackUrls {
+  success: string;
+  pending: string;
+  failure: string;
+}
+
+export interface CreateCheckoutPreferenceParams {
+  amount: number;
+  title: string;
+  payerEmail: string;
+  payerName?: string;
+  externalReference: string;
+  notificationUrl?: string;
+  backUrls: CheckoutBackUrls;
+}
+
+export interface CheckoutPreferenceResult {
+  preferenceId: string;
+  initPoint: string | null;
+  sandboxInitPoint: string | null;
+}
+
+export function buildPaymentReference(kind: PaymentReferenceKind, docId: string): string {
+  return `${kind}:${docId}`;
+}
+
+export function parsePaymentReference(externalReference: string): PaymentReference | null {
+  const ref = externalReference.trim();
+  if (!ref) return null;
+
+  const [kind, ...rest] = ref.split(':');
+  const docId = rest.join(':');
+
+  if (!docId) {
+    return { kind: 'contribution', collection: 'contributions', docId: ref };
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(docId)) return null;
+
+  if (kind === 'contribution') {
+    return { kind, collection: 'contributions', docId };
+  }
+  if (kind === 'tieBid') {
+    return { kind, collection: 'tieBids', docId };
+  }
+
+  return null;
 }
 
 /**
@@ -82,7 +139,64 @@ export async function createPixPayment(params: CreatePixParams): Promise<PixResu
 }
 
 /** Consulta um pagamento no MP — fonte da verdade do webhook. */
-export async function getPayment(paymentId: string): Promise<{ status: string; statusDetail: string; externalReference: string } | null> {
+export async function createCheckoutPreference(
+  params: CreateCheckoutPreferenceParams,
+): Promise<CheckoutPreferenceResult> {
+  const token = process.env.MP_ACCESS_TOKEN;
+  if (!token) throw new Error('MP_ACCESS_TOKEN ausente.');
+
+  const body = {
+    items: [
+      {
+        id: params.externalReference,
+        title: params.title,
+        quantity: 1,
+        unit_price: params.amount,
+        currency_id: 'BRL',
+      },
+    ],
+    payer: {
+      email: params.payerEmail,
+      ...(params.payerName ? { name: params.payerName } : {}),
+    },
+    external_reference: params.externalReference,
+    back_urls: params.backUrls,
+    auto_return: 'approved',
+    ...(params.notificationUrl ? { notification_url: params.notificationUrl } : {}),
+    metadata: {
+      external_reference: params.externalReference,
+    },
+  };
+
+  const res = await fetch(`${MP_API}/checkout/preferences`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`MP createCheckoutPreference falhou (${res.status}): ${text.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  return {
+    preferenceId: String(data.id),
+    initPoint: data.init_point ? String(data.init_point) : null,
+    sandboxInitPoint: data.sandbox_init_point ? String(data.sandbox_init_point) : null,
+  };
+}
+
+export async function getPayment(paymentId: string): Promise<{
+  status: string;
+  statusDetail: string;
+  externalReference: string;
+  paymentMethodId: string;
+  paymentTypeId: string;
+} | null> {
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) throw new Error('MP_ACCESS_TOKEN ausente.');
 
@@ -95,6 +209,8 @@ export async function getPayment(paymentId: string): Promise<{ status: string; s
     status: String(data.status ?? ''),
     statusDetail: String(data.status_detail ?? ''),
     externalReference: String(data.external_reference ?? ''),
+    paymentMethodId: String(data.payment_method_id ?? ''),
+    paymentTypeId: String(data.payment_type_id ?? ''),
   };
 }
 

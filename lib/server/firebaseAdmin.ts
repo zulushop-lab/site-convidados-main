@@ -7,8 +7,7 @@
  * app/api/** (runtime nodejs) e le segredos de process.env (nunca NEXT_PUBLIC_).
  *
  * Inicializacao LAZY e singleton: sem credencial, getAdminDb() retorna null e as
- * rotas degradam para "modo simulado" (a spec exige que a ausencia de chave NUNCA
- * quebre o build nem a navegacao). databaseId e parametrizado via env
+ * rotas de pagamento falham explicitamente sem quebrar build/page-data. databaseId e parametrizado via env
  * (PREFLIGHT pendente, decisao #11) — nunca hardcodar o banco nomeado.
  *
  * Dependencia opcional: `firebase-admin` so e necessaria quando ha credencial.
@@ -43,7 +42,7 @@ function readServiceAccount(): Record<string, unknown> | null {
 
 /**
  * Retorna a instancia de Firestore do Admin SDK, ou null se nao houver
- * credencial configurada (modo simulado). Memoiza o resultado.
+ * credencial configurada. Memoiza o resultado.
  */
 export async function getAdminDb(): Promise<AdminDb | null> {
   if (cached !== undefined) return cached;

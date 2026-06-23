@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/server/firebaseAdmin';
-import { getPayment, mapMpStatus, verifyWebhookSignature } from '@/lib/server/mercadopago';
+import {
+  getPayment,
+  mapMpStatus,
+  parsePaymentReference,
+  verifyWebhookSignature,
+} from '@/lib/server/mercadopago';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   const url = new URL(request.url);
-  const dataId = payload?.data?.id ?? url.searchParams.get('data.id');
+  const dataId = payload?.data?.id ?? url.searchParams.get('data.id') ?? url.searchParams.get('id');
 
   if (!verifyWebhookSignature({ xSignature, xRequestId, dataId: dataId ?? null })) {
     return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
@@ -43,8 +48,8 @@ export async function POST(request: Request) {
 
   const adminDb = await getAdminDb();
   if (!adminDb) {
-    console.log('[MP] modo simulado: webhook recebido sem Admin SDK; nada promovido.');
-    return NextResponse.json({ received: true, simulated: true });
+    console.error('[MP] webhook recebido sem Admin SDK; status nao promovido.');
+    return NextResponse.json({ error: 'Firebase Admin SDK nao configurado.' }, { status: 500 });
   }
 
   const payment = await getPayment(dataId);
@@ -52,8 +57,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true });
   }
 
+  const paymentReference = parsePaymentReference(payment.externalReference);
+  if (!paymentReference) {
+    return NextResponse.json({ received: true });
+  }
+
   const nextStatus = mapMpStatus(payment.status);
-  const ref = adminDb.collection('contributions').doc(payment.externalReference);
+  const ref = adminDb.collection(paymentReference.collection).doc(paymentReference.docId);
   const { FieldValue } = await import('firebase-admin/firestore');
 
   const snap = await ref.get();
@@ -69,9 +79,12 @@ export async function POST(request: Request) {
     status: nextStatus,
     mpStatus: payment.status,
     mpStatusDetail: payment.statusDetail,
+    mpPaymentId: dataId,
+    mpPaymentMethodId: payment.paymentMethodId,
+    mpPaymentTypeId: payment.paymentTypeId,
     updatedAt: FieldValue.serverTimestamp(),
     ...(nextStatus === 'completed' ? { paidAt: FieldValue.serverTimestamp() } : {}),
   });
 
-  return NextResponse.json({ received: true, status: nextStatus });
+  return NextResponse.json({ received: true, status: nextStatus, kind: paymentReference.kind });
 }

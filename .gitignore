@@ -19,3 +19,5 @@ scripts/.cathedral-bg.png
 scripts/.alex-brush.ttf
 scripts/.corner-ornament.svg
 scripts/.monogram-b64.txt
+.vercel
+.env*.local

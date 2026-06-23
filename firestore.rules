@@ -109,7 +109,7 @@ service cloud.firestore {
     }
 
     match /contributions/{contribId} {
-      allow create: if isSignedIn() && isValidContribution(incoming());
+      allow create: if false;
       // Promocao de status: somente admin/servidor, transicao valida do ENUM,
       // createdAt imutavel. (O webhook MP usa Admin SDK e ignora rules; esta
       // regra barra qualquer cliente de promover status.)
@@ -132,7 +132,7 @@ service cloud.firestore {
     }
 
     match /tieBids/{bidId} {
-      allow create: if isSignedIn() && isValidTieBid(incoming());
+      allow create: if false;
       allow update: if isAdmin() &&
                        isValidStatusTransition(existing().status, incoming().status);
       // Leaderboard publico real so apos leaderboards/* derivados (SPEC-GRAVATA completa).

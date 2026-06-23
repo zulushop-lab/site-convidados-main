@@ -2,22 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, ensureAnonymousAuth } from '@/lib/firebase';
-import { handleFirestoreError, OperationType } from '@/lib/firestore-errors';
-import type { TieBidStatus } from '@/domain/types';
+import { ArrowLeft, Banknote, ExternalLink, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 
-type TieBidCreateInput = {
-  amount: number;
-  message?: string;
-  donorName: string;
-  donorEmail: string;
-  status: Extract<TieBidStatus, 'pending'>;
-  createdAt: ReturnType<typeof serverTimestamp>;
-};
-
-// Espelha parseBrlAmount de app/presentes/checkout/page.tsx (normalizacao BRL).
 const parseBrlAmount = (value: string) => {
   const cleanedValue = value.trim().replace(/[^\d,.]/g, '');
   const normalizedValue = cleanedValue.includes(',')
@@ -28,8 +14,6 @@ const parseBrlAmount = (value: string) => {
 };
 
 const MESSAGE_MAX = 500;
-
-// Pacotes sugeridos de lance (valores simbolicos; ajustaveis no campo livre).
 const SUGGESTED_BIDS = [50, 100, 200, 500];
 
 export default function GravataPage() {
@@ -38,101 +22,64 @@ export default function GravataPage() {
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmountStr(e.target.value.replace(/[^0-9,]/g, ''));
+  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setAmountStr(event.target.value.replace(/[^0-9,]/g, ''));
   };
 
   const handleSuggested = (value: number) => {
     setAmountStr(value.toFixed(2).replace('.', ','));
   };
 
-  const resetForNewBid = () => {
-    setAmountStr('');
-    setMessage('');
-    setIsSuccess(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!donorName.trim() || !donorEmail.trim()) {
-      alert('Por favor, preencha seu nome e e-mail.');
-      return;
-    }
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError('');
 
     const amountValue = parseBrlAmount(amountStr);
     if (!Number.isFinite(amountValue) || amountValue <= 0) {
-      alert('Informe um valor de lance valido.');
+      setError('Informe um valor de lance valido.');
+      return;
+    }
+    if (!donorName.trim() || !donorEmail.trim()) {
+      setError('Preencha seu nome e e-mail para iniciar o pagamento.');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      await ensureAnonymousAuth();
+      const response = await fetch('/api/mercadopago/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'tie_bid',
+          amount: amountValue,
+          item: 'Gravata do Noivo',
+          donorName: donorName.trim(),
+          donorEmail: donorEmail.trim(),
+          message: message.trim(),
+        }),
+      });
 
-      const trimmedMessage = message.trim();
-      const tieBidData: TieBidCreateInput = {
-        amount: amountValue,
-        donorName: donorName.trim(),
-        donorEmail: donorEmail.trim(),
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        ...(trimmedMessage ? { message: trimmedMessage.slice(0, MESSAGE_MAX) } : {}),
+      const data = (await response.json().catch(() => ({}))) as {
+        checkoutUrl?: string;
+        error?: string;
       };
 
-      await addDoc(collection(db, 'tieBids'), tieBidData satisfies TieBidCreateInput);
+      if (!response.ok) {
+        throw new Error(data.error || 'Nao foi possivel iniciar o pagamento.');
+      }
+      if (!data.checkoutUrl) {
+        throw new Error('Mercado Pago nao retornou a URL de pagamento.');
+      }
 
+      window.location.assign(data.checkoutUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao iniciar o pagamento.');
       setIsProcessing(false);
-      setIsSuccess(true);
-    } catch (error) {
-      setIsProcessing(false);
-      handleFirestoreError(error, OperationType.CREATE, 'tieBids');
     }
   };
-
-  if (isSuccess) {
-    return (
-      <main className="relative min-h-screen pt-32 pb-24 flex flex-col items-center justify-center px-6">
-        <div className="max-w-md w-full bg-surface-container-lowest p-12 text-center border border-outline-variant/15 shadow-sm">
-          <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-6" strokeWidth={1} />
-          <h2 className="font-headline text-4xl italic text-on-surface mb-4">Lance Registrado!</h2>
-          <div className="space-y-4 mb-10">
-            <p className="font-body text-on-surface-variant leading-relaxed">
-              Recebemos sua inten&ccedil;&atilde;o de lance na Gravata do Noivo. A confirma&ccedil;&atilde;o
-              acontece assim que o pagamento for processado.
-            </p>
-            <p className="font-body text-on-surface-variant/70 text-sm leading-relaxed">
-              Em breve o Pix real ser&aacute; emitido pelo Mercado Pago. Seu lance entra no ranking
-              quando o pagamento for confirmado.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={resetForNewBid}
-              className="btn-primary w-full py-4 flex items-center justify-center gap-2"
-            >
-              Dar outro lance
-            </button>
-            <Link
-              href="/#gravata"
-              className="w-full py-4 border border-outline-variant/30 font-label text-[10px] uppercase tracking-[0.2em] hover:bg-surface-container-low transition-colors rounded-sm"
-            >
-              Ver o ranking
-            </Link>
-            <Link
-              href="/presentes"
-              className="w-full py-4 border border-outline-variant/30 font-label text-[10px] uppercase tracking-[0.2em] hover:bg-surface-container-low transition-colors rounded-sm"
-            >
-              Ver lista de presentes
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   const remainingChars = MESSAGE_MAX - message.length;
 
@@ -151,15 +98,14 @@ export default function GravataPage() {
         </span>
         <h1 className="font-headline text-5xl italic text-on-surface mb-4">Dar meu Lance</h1>
         <p className="font-body text-on-surface-variant leading-relaxed">
-          Uma disputa de brincadeira: quem der o maior lance leva a gl&oacute;ria no ranking. Que
-          ven&ccedil;a a fam&iacute;lia mais animada!
+          Uma disputa de brincadeira: quem der o maior lance confirmado entra no ranking. Lance
+          registrado sem pagamento nao conta.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Valor do lance */}
-        <div className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
-          <h3 className="font-headline text-2xl italic text-primary mb-6">Valor do Lance</h3>
+        <section className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
+          <h2 className="font-headline text-2xl italic text-primary mb-6">Valor do Lance</h2>
 
           <div className="flex flex-wrap gap-2 mb-8">
             {SUGGESTED_BIDS.map((value) => (
@@ -192,11 +138,10 @@ export default function GravataPage() {
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Seus dados */}
-        <div className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
-          <h3 className="font-headline text-2xl italic text-primary mb-6">Seus Dados</h3>
+        <section className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
+          <h2 className="font-headline text-2xl italic text-primary mb-6">Seus Dados</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label htmlFor="donor-name" className="font-label text-[10px] uppercase tracking-widest text-secondary">
@@ -206,7 +151,7 @@ export default function GravataPage() {
                 type="text"
                 id="donor-name"
                 value={donorName}
-                onChange={(e) => setDonorName(e.target.value)}
+                onChange={(event) => setDonorName(event.target.value)}
                 placeholder="Ex: Roberto Silva"
                 required
                 className="w-full bg-surface-container-low border border-outline-variant/20 p-4 font-body text-on-surface placeholder:text-outline/50 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all"
@@ -220,7 +165,7 @@ export default function GravataPage() {
                 type="email"
                 id="donor-email"
                 value={donorEmail}
-                onChange={(e) => setDonorEmail(e.target.value)}
+                onChange={(event) => setDonorEmail(event.target.value)}
                 placeholder="Ex: roberto@exemplo.com"
                 required
                 className="w-full bg-surface-container-low border border-outline-variant/20 p-4 font-body text-on-surface placeholder:text-outline/50 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all"
@@ -235,29 +180,44 @@ export default function GravataPage() {
             <textarea
               id="bid-message"
               value={message}
-              onChange={(e) => setMessage(e.target.value.slice(0, MESSAGE_MAX))}
+              onChange={(event) => setMessage(event.target.value.slice(0, MESSAGE_MAX))}
               maxLength={MESSAGE_MAX}
               rows={3}
-              placeholder="Que vença a família mais animada!"
+              placeholder="Que venca a familia mais animada!"
               className="w-full bg-surface-container-low border border-outline-variant/20 p-4 font-body text-on-surface placeholder:text-outline/50 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all resize-none"
             />
             <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant/60 self-end">
               {remainingChars} caracteres restantes
             </span>
           </div>
-        </div>
+        </section>
 
-        {/* Modo simulado + confirmacao */}
-        <div className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12 space-y-8">
-          <div className="bg-surface-container-low border border-outline-variant/20 p-6 text-left">
-            <p className="font-label text-[10px] uppercase tracking-widest text-primary mb-2">Modo simulado</p>
-            <p className="font-body text-sm text-on-surface-variant leading-relaxed">
-              Este passo registra sua inten&ccedil;&atilde;o de lance. Nenhum QR Code ou c&oacute;digo
-              pag&aacute;vel &eacute; exibido nesta vers&atilde;o &mdash; o Pix real ser&aacute; emitido
-              pelo Mercado Pago quando a integra&ccedil;&atilde;o estiver dispon&iacute;vel. O lance fica
-              <strong> pendente</strong> at&eacute; o pagamento ser confirmado.
-            </p>
+        <section className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12 space-y-8">
+          <div className="flex items-start gap-4">
+            <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ShieldCheck className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="font-headline text-2xl italic text-primary mb-2">Pagamento Mercado Pago</h2>
+              <p className="font-body text-sm text-on-surface-variant leading-relaxed">
+                Seu lance so entra no ranking depois que o Mercado Pago confirmar o pagamento.
+                Pix, cartao e demais meios disponiveis ficam no checkout deles.
+              </p>
+            </div>
           </div>
+
+          <div className="border border-outline-variant/20 bg-surface-container-low p-4 flex items-center gap-3">
+            <Banknote className="w-5 h-5 text-primary" aria-hidden="true" />
+            <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+              Confirmacao automatica por webhook
+            </span>
+          </div>
+
+          {error && (
+            <div className="border border-primary/30 bg-primary/5 p-4">
+              <p className="font-body text-sm text-primary leading-relaxed">{error}</p>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -267,16 +227,16 @@ export default function GravataPage() {
             {isProcessing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-                <span>Processando...</span>
+                <span>Redirecionando...</span>
               </>
             ) : (
               <>
-                <span>Registrar meu lance</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                <span>Pagar Lance com Mercado Pago</span>
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
               </>
             )}
           </button>
-        </div>
+        </section>
       </form>
     </main>
   );

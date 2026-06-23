@@ -1,6 +1,6 @@
 export type RSVPGuestStatus = 'pending' | 'confirmed' | 'declined';
 export type ContributionStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type ContributionPaymentMethod = 'pix' | 'credit_card';
+export type ContributionPaymentMethod = 'pix' | 'credit_card' | 'mercadopago';
 export type GiftCategory = 'Primeiros Passos' | 'Lua de Mel' | 'Casa';
 
 export interface GiftCatalogItem {
@@ -65,6 +65,8 @@ export interface TieBid {
   amount: number; // BRL decimal, ex. 150.00 (mesma unidade de Contribution). > 0.
   guestId?: string; // Opcional ate SPEC-RSVP-AUTH carimbar identidade.
   familyId?: string; // Opcional; ranking por familia so conta quando presente. Desnormalizado p/ agregacoes (ADR-0004).
+  donorName?: string;
+  donorEmail?: string;
   message?: string; // Ate 500 chars.
   createdAt: number;
   status: TieBidStatus; // Cliente cria apenas 'pending'; promocao e exclusiva do servidor.
