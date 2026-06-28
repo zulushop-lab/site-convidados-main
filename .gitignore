@@ -21,3 +21,11 @@ scripts/.corner-ornament.svg
 scripts/.monogram-b64.txt
 .vercel
 .env*.local
+
+# Raw local gallery sources; final WebP assets live in public/galeria-noivos/.
+output/galeria-noivos/source-jpg/
+output/galeria-noivos/manifest.json
+
+# Local visual validation captures. Tracked reference captures remain versioned.
+output/playwright/*.png
+output/playwright/*.jpg
