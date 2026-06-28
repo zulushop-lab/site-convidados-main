@@ -139,6 +139,39 @@ addTest("hardened: client cannot create tieBid records directly", async () => {
   );
 });
 
+addTest("hardened: public leaderboard is readable but internal totals are private", async () => {
+  const publicDb = testEnv.unauthenticatedContext().firestore();
+
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await db.collection("leaderboards").doc("individual").set({
+      entries: [],
+      updatedAt: timestamp(),
+    });
+    await db
+      .collection("leaderboardTotals")
+      .doc("individual")
+      .collection("items")
+      .doc("guest-1")
+      .set({
+        id: "guest-1",
+        name: "Visitante",
+        total: 150,
+        bidCount: 1,
+      });
+  });
+
+  await assertSucceeds(publicDb.collection("leaderboards").doc("individual").get());
+  await assertFails(
+    publicDb
+      .collection("leaderboardTotals")
+      .doc("individual")
+      .collection("items")
+      .doc("guest-1")
+      .get(),
+  );
+});
+
 addTest("hardened: only admin can perform valid contribution status update", async () => {
   const guestDb = guest().firestore();
   const adminDb = admin().firestore();

@@ -98,6 +98,7 @@ function ReturnContent() {
   }, [kind, status]);
 
   const retryHref = kind === 'tie_bid' ? '/presentes/gravata' : '/presentes';
+  const isWaiting = status === 'pending' || status === 'processing';
 
   return (
     <main className="relative min-h-screen pt-32 pb-24 flex flex-col items-center justify-center px-6">
@@ -121,13 +122,41 @@ function ReturnContent() {
             >
               Tentar novamente
             </Link>
+          ) : status === 'completed' ? (
+            <>
+              <Link
+                href={kind === 'tie_bid' ? '/#gravata' : '/presentes'}
+                className="btn-primary w-full py-4 flex items-center justify-center gap-2"
+              >
+                <Gift className="w-4 h-4" aria-hidden="true" />
+                {kind === 'tie_bid' ? 'Ver ranking' : 'Voltar para presentes'}
+              </Link>
+
+              {kind === 'tie_bid' && (
+                <Link
+                  href="/presentes/gravata"
+                  className="w-full py-4 border border-outline-variant/30 font-label text-[10px] uppercase tracking-[0.2em] hover:bg-surface-container-low transition-colors rounded-sm"
+                >
+                  Dar outro lance
+                </Link>
+              )}
+            </>
           ) : (
-            <Link
-              href={kind === 'tie_bid' ? '/#gravata' : '/presentes'}
-              className="btn-primary w-full py-4 flex items-center justify-center gap-2"
+            <button
+              type="button"
+              disabled
+              className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
             >
-              <Gift className="w-4 h-4" aria-hidden="true" />
-              {kind === 'tie_bid' ? 'Ver ranking' : 'Voltar para presentes'}
+              {isWaiting ? 'Acompanhando confirmacao' : 'Consultando pagamento'}
+            </button>
+          )}
+
+          {status !== 'completed' && status !== 'failed' && (
+            <Link
+              href="/presentes"
+              className="w-full py-4 border border-outline-variant/30 font-label text-[10px] uppercase tracking-[0.2em] hover:bg-surface-container-low transition-colors rounded-sm"
+            >
+              Voltar para presentes
             </Link>
           )}
 

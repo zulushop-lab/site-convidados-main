@@ -1,8 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Banknote, ExternalLink, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  Banknote,
+  ExternalLink,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from 'lucide-react';
+import { useGuest } from '@/lib/context/GuestContext';
+
+const TIE_BID_MIN_AMOUNT = 50;
+const MESSAGE_MAX = 500;
+const SUGGESTED_BIDS = [50, 100, 200, 500];
+
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
 
 const parseBrlAmount = (value: string) => {
   const cleanedValue = value.trim().replace(/[^\d,.]/g, '');
@@ -13,16 +31,44 @@ const parseBrlAmount = (value: string) => {
   return Number.parseFloat(normalizedValue);
 };
 
-const MESSAGE_MAX = 500;
-const SUGGESTED_BIDS = [50, 100, 200, 500];
-
 export default function GravataPage() {
+  const { identity } = useGuest();
   const [amountStr, setAmountStr] = useState('');
   const [message, setMessage] = useState('');
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+
+  const identityDefaults = useMemo(() => {
+    if (!identity) return null;
+
+    const selectedGuest =
+      identity.guests.find((guest) => guest.id === identity.guestId) ??
+      identity.guests.find((guest) => guest.isMainGuest) ??
+      (identity.guests.length === 1 ? identity.guests[0] : null);
+
+    return {
+      familyId: identity.familyId,
+      familyName: identity.familyName,
+      guestId: identity.guestId,
+      guestName: selectedGuest?.name ?? '',
+      guestEmail: selectedGuest?.email ?? '',
+    };
+  }, [identity]);
+
+  useEffect(() => {
+    if (!identityDefaults) return;
+
+    if (identityDefaults.guestName) {
+      setDonorName((current) => current || identityDefaults.guestName);
+      setDisplayName((current) => current || identityDefaults.guestName);
+    }
+    if (identityDefaults.guestEmail) {
+      setDonorEmail((current) => current || identityDefaults.guestEmail);
+    }
+  }, [identityDefaults]);
 
   const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setAmountStr(event.target.value.replace(/[^0-9,]/g, ''));
@@ -37,12 +83,18 @@ export default function GravataPage() {
     setError('');
 
     const amountValue = parseBrlAmount(amountStr);
-    if (!Number.isFinite(amountValue) || amountValue <= 0) {
-      setError('Informe um valor de lance valido.');
+    if (!Number.isFinite(amountValue) || amountValue < TIE_BID_MIN_AMOUNT) {
+      setError('O lance minimo e R$ 50.');
       return;
     }
     if (!donorName.trim() || !donorEmail.trim()) {
       setError('Preencha seu nome e e-mail para iniciar o pagamento.');
+      return;
+    }
+
+    const publicName = (displayName || donorName).trim();
+    if (!publicName) {
+      setError('Informe o nome que aparecera no ranking.');
       return;
     }
 
@@ -58,7 +110,15 @@ export default function GravataPage() {
           item: 'Gravata do Noivo',
           donorName: donorName.trim(),
           donorEmail: donorEmail.trim(),
+          displayName: publicName,
           message: message.trim(),
+          ...(identityDefaults?.familyId
+            ? {
+                familyId: identityDefaults.familyId,
+                familyName: identityDefaults.familyName,
+              }
+            : {}),
+          ...(identityDefaults?.guestId ? { guestId: identityDefaults.guestId } : {}),
         }),
       });
 
@@ -98,8 +158,8 @@ export default function GravataPage() {
         </span>
         <h1 className="font-headline text-5xl italic text-on-surface mb-4">Dar meu Lance</h1>
         <p className="font-body text-on-surface-variant leading-relaxed">
-          Uma disputa de brincadeira: quem der o maior lance confirmado entra no ranking. Lance
-          registrado sem pagamento nao conta.
+          Uma disputa de brincadeira: quem somar mais lances confirmados sobe no ranking.
+          Lance registrado sem pagamento nao conta.
         </p>
       </div>
 
@@ -115,7 +175,7 @@ export default function GravataPage() {
                 onClick={() => handleSuggested(value)}
                 className="px-5 py-2.5 border border-outline-variant/30 font-label text-[10px] uppercase tracking-widest hover:bg-surface-container-low transition-colors rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)}
+                {brlFormatter.format(value)}
               </button>
             ))}
           </div>
@@ -137,15 +197,28 @@ export default function GravataPage() {
                 className="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 pl-8 focus:outline-none focus:border-primary font-body text-xl transition-colors text-on-surface"
               />
             </div>
+            <p className="mt-3 font-body text-xs text-on-surface-variant">
+              Lance minimo: {brlFormatter.format(TIE_BID_MIN_AMOUNT)}.
+            </p>
           </div>
         </section>
 
         <section className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
           <h2 className="font-headline text-2xl italic text-primary mb-6">Seus Dados</h2>
+
+          {identityDefaults?.familyId && (
+            <div className="mb-6 border border-outline-variant/20 bg-surface-container-low p-4 flex items-center gap-3">
+              <Users className="w-5 h-5 text-primary" aria-hidden="true" />
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+                Vinculado a {identityDefaults.familyName}
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label htmlFor="donor-name" className="font-label text-[10px] uppercase tracking-widest text-secondary">
-                Seu Nome Completo
+                Nome do pagador
               </label>
               <input
                 type="text"
@@ -159,7 +232,7 @@ export default function GravataPage() {
             </div>
             <div className="flex flex-col gap-2">
               <label htmlFor="donor-email" className="font-label text-[10px] uppercase tracking-widest text-secondary">
-                Seu E-mail
+                E-mail do pagamento
               </label>
               <input
                 type="email"
@@ -171,11 +244,24 @@ export default function GravataPage() {
                 className="w-full bg-surface-container-low border border-outline-variant/20 p-4 font-body text-on-surface placeholder:text-outline/50 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all"
               />
             </div>
+            <div className="flex flex-col gap-2 md:col-span-2">
+              <label htmlFor="display-name" className="font-label text-[10px] uppercase tracking-widest text-secondary">
+                Nome no ranking
+              </label>
+              <input
+                type="text"
+                id="display-name"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                placeholder="Como seu nome deve aparecer no Top 10"
+                className="w-full bg-surface-container-low border border-outline-variant/20 p-4 font-body text-on-surface placeholder:text-outline/50 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2 mt-6">
             <label htmlFor="bid-message" className="font-label text-[10px] uppercase tracking-widest text-secondary">
-              Mensagem (opcional)
+              Mensagem privada aos noivos (opcional)
             </label>
             <textarea
               id="bid-message"
@@ -200,7 +286,7 @@ export default function GravataPage() {
             <div>
               <h2 className="font-headline text-2xl italic text-primary mb-2">Pagamento Mercado Pago</h2>
               <p className="font-body text-sm text-on-surface-variant leading-relaxed">
-                Seu lance so entra no ranking depois que o Mercado Pago confirmar o pagamento.
+                Seu lance so entra no Top 10 depois que o Mercado Pago confirmar o pagamento.
                 Pix, cartao e demais meios disponiveis ficam no checkout deles.
               </p>
             </div>

@@ -146,5 +146,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /leaderboardTotals/{scope}/items/{entryId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

@@ -18,12 +18,15 @@ interface CheckoutBody {
   item?: unknown;
   donorName?: unknown;
   donorEmail?: unknown;
+  displayName?: unknown;
   message?: unknown;
   familyId?: unknown;
+  familyName?: unknown;
   guestId?: unknown;
 }
 
 const MESSAGE_MAX = 500;
+const TIE_BID_MIN_AMOUNT = 50;
 
 const asString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
@@ -62,12 +65,17 @@ export async function POST(request: Request) {
   const item = checkoutKind === 'tie_bid' ? 'Gravata do Noivo' : rawItem;
   const donorName = asString(body.donorName);
   const donorEmail = asString(body.donorEmail);
+  const displayName = asString(body.displayName);
   const message = asString(body.message).slice(0, MESSAGE_MAX);
   const familyId = asString(body.familyId);
+  const familyName = asString(body.familyName);
   const guestId = asString(body.guestId);
 
   if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
     return NextResponse.json({ error: 'Valor invalido' }, { status: 400 });
+  }
+  if (checkoutKind === 'tie_bid' && amount < TIE_BID_MIN_AMOUNT) {
+    return NextResponse.json({ error: 'O lance minimo e R$ 50.' }, { status: 400 });
   }
   if (!item || item.length > 200) {
     return NextResponse.json({ error: 'Item invalido' }, { status: 400 });
@@ -105,6 +113,8 @@ export async function POST(request: Request) {
           amount,
           donorName,
           donorEmail,
+          displayName: (displayName || donorName).slice(0, 200),
+          paymentMethod: 'mercadopago',
           status: 'pending',
           externalReference,
           provider: 'mercadopago',
@@ -112,6 +122,7 @@ export async function POST(request: Request) {
           createdAt,
           ...(message ? { message } : {}),
           ...(familyId ? { familyId } : {}),
+          ...(familyId && familyName ? { familyName: familyName.slice(0, 200) } : {}),
           ...(guestId ? { guestId } : {}),
         }
       : {

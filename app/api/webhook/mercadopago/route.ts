@@ -6,18 +6,14 @@ import {
   parsePaymentReference,
   verifyWebhookSignature,
 } from '@/lib/server/mercadopago';
+import { aggregateCompletedTieBid } from '@/lib/server/tieLeaderboard';
 
 export const runtime = 'nodejs';
 
 /**
- * POST /api/webhook/mercadopago — promove contributions/{id}.status via Admin SDK
- * (SPEC-PAYMENTS-MP RT-4). UNICA rota que promove status.
- *
- * 1. valida x-signature -> 401 se invalida (sem efeito colateral)
- * 2. reconsulta o pagamento no MP (fonte da verdade; nunca confia so no corpo)
- * 3. mapeia status MP -> ENUM e atualiza por external_reference
- * 4. idempotente: nao regride estado terminal; reentrega nao duplica
- * 5. responde 200 para eventos reconhecidos (evita retries infinitos do MP)
+ * POST /api/webhook/mercadopago: promotes financial records through Admin SDK.
+ * The Mercado Pago payment lookup is the source of truth; the request body is
+ * never trusted for status changes.
  */
 
 const TERMINAL = new Set(['completed', 'failed']);
@@ -40,7 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Assinatura invalida' }, { status: 401 });
   }
 
-  // So tratamos eventos de pagamento; o resto e reconhecido com 200 (idempotente).
   if (payload.type && payload.type !== 'payment') {
     return NextResponse.json({ received: true });
   }
@@ -71,7 +66,15 @@ export async function POST(request: Request) {
 
   const current = snap.data()?.status as string | undefined;
   if (current && TERMINAL.has(current)) {
-    // ja finalizado — idempotente, nao regride
+    if (paymentReference.kind === 'tieBid' && current === 'completed') {
+      const aggregation = await aggregateCompletedTieBid(
+        adminDb,
+        paymentReference.docId,
+        FieldValue,
+      );
+      return NextResponse.json({ received: true, idempotent: true, aggregation });
+    }
+
     return NextResponse.json({ received: true, idempotent: true });
   }
 
@@ -86,5 +89,15 @@ export async function POST(request: Request) {
     ...(nextStatus === 'completed' ? { paidAt: FieldValue.serverTimestamp() } : {}),
   });
 
-  return NextResponse.json({ received: true, status: nextStatus, kind: paymentReference.kind });
+  const aggregation =
+    paymentReference.kind === 'tieBid' && nextStatus === 'completed'
+      ? await aggregateCompletedTieBid(adminDb, paymentReference.docId, FieldValue)
+      : null;
+
+  return NextResponse.json({
+    received: true,
+    status: nextStatus,
+    kind: paymentReference.kind,
+    aggregation,
+  });
 }
