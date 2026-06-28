@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Home, CalendarHeart, Gift, MapPin, Mail } from 'lucide-react';
+import { Home, CalendarHeart, Gift, Mail, Camera } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'motion/react';
+import { motion, AnimatePresence, useScroll } from 'motion/react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -43,8 +43,9 @@ export function GlobalNavigationOptions() {
   }, [pathname, scrollY]);
 
   const items = [
-    { label: 'A Página', icon: Home, href: '/' },
-    { label: 'Eventos', icon: CalendarHeart, href: '/eventos' },
+    { label: 'Início', icon: Home, href: '/' },
+    { label: 'Fotos', icon: Camera, href: '/galeria' },
+    { label: 'Evento', icon: CalendarHeart, href: '/eventos' },
     { label: 'Presentes', icon: Gift, href: '/presentes' },
     { label: 'Presença', icon: Mail, href: '/presenca' }
   ];
@@ -90,7 +91,7 @@ export function GlobalNavigationOptions() {
           {/* Refined gold accent top line spanning the whole width with glow */}
           <div className={cn("absolute top-0 inset-x-0 h-[1px]", isDark ? "bg-gradient-to-r from-transparent via-gold/40 to-transparent shadow-[0_0_15px_rgba(212,175,55,0.2)]" : "bg-gradient-to-r from-transparent via-gold/40 to-transparent shadow-[0_1px_15px_rgba(212,175,55,0.3)]")} />
           
-          <div className="flex justify-around items-center w-full max-w-2xl px-2 relative z-10">
+          <div className="flex justify-around items-center w-full max-w-3xl px-1 relative z-10">
             {items.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -100,7 +101,7 @@ export function GlobalNavigationOptions() {
                   href={item.href}
                   onClick={() => handleLinkClick(item.href)}
                   className={cn(
-                    "relative flex flex-col items-center justify-center w-[71px] md:w-[85px] h-[61px] transition-all duration-500 group",
+                    "relative flex flex-col items-center justify-center w-[60px] sm:w-[70px] md:w-[85px] h-[61px] transition-all duration-500 group",
                     isActive 
                       ? isDark ? "text-gold" : "text-[#8C6A0A]" // Darker gold in light mode for better readability
                       : isDark ? "text-white/70 hover:text-white" : "text-black/70 hover:text-black"
@@ -113,7 +114,7 @@ export function GlobalNavigationOptions() {
                   >
                     <Icon strokeWidth={isActive ? 2 : 1.75} className={cn("w-[22px] h-[22px] md:w-[26px] md:h-[26px] transition-all duration-500", isActive && isDark && "drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]", !isDark && "drop-shadow-sm")} />
                     <span className={cn(
-                      "text-[8.5px] md:text-[9.5px] font-label uppercase tracking-[0.2em] md:tracking-[0.25em] whitespace-nowrap transition-all duration-500",
+                      "text-[7px] sm:text-[8px] md:text-[9.5px] font-label uppercase tracking-[0.08em] sm:tracking-[0.14em] md:tracking-[0.25em] whitespace-nowrap transition-all duration-500",
                       isActive ? "opacity-100 font-semibold" : "opacity-90 font-medium",
                       !isDark && "drop-shadow-[0_1px_2px_rgba(255,255,255,0.5)]"
                     )}>

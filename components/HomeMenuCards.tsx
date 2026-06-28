@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, MapPin, Gift, Camera, UserCheck, CalendarHeart, Heart } from "lucide-react";
+import { ArrowRight, Gift, Camera, UserCheck, CalendarHeart } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
@@ -168,30 +168,30 @@ function MenuCard({
 export function HomeMenuCards() {
   const cards = [
     {
-      title: "Confirmar Presença",
-      excerpt: "Sua presença é essencial. Por favor, confirme para nos ajudar a organizar tudo com perfeição.",
-      image: "/imagem-3.jpg",
-      href: "/presenca",
-      icon: UserCheck,
-    },
-    {
-      title: "O Grande Dia",
-      excerpt: "Toda a programação, horários e detalhes para celebrar esse momento conosco.",
-      image: "/imagem-1.jpg",
+      title: "Detalhes do Evento",
+      excerpt: "Cerimônia, recepção, roteiro, traje e hospedagem reunidos para consulta rápida.",
+      image: "/catedral-brasilia.png",
       href: "/eventos",
       icon: CalendarHeart,
     },
     {
-      title: "Nossa Jornada",
-      excerpt: "Conheça nossos momentos mais especiais e a história que construímos.",
-      image: "/imagem-2.jpg",
-      href: "/#historia",
-      icon: Heart,
+      title: "Galeria dos Noivos",
+      excerpt: "Fotos selecionadas do pre-wedding para entrar no clima antes do grande dia.",
+      image: "/galeria-noivos/enim-136.webp",
+      href: "/galeria",
+      icon: Camera,
+    },
+    {
+      title: "Confirmar Presença",
+      excerpt: "Sua presença continua essencial para organizarmos tudo com precisão.",
+      image: "/galeria-noivos/enim-325.webp",
+      href: "/presenca",
+      icon: UserCheck,
     },
     {
       title: "Presentes",
-      excerpt: "Preparamos uma lista especial com muito carinho para quem desejar nos presentear.",
-      image: "/imagem-3.jpg",
+      excerpt: "A lista especial segue disponível para quem desejar nos presentear.",
+      image: "/galeria-noivos/enim-454.webp",
       href: "/presentes",
       icon: Gift,
     },

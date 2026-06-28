@@ -11,7 +11,8 @@ from PIL import Image, ImageOps
 FOLDER_ID = "12-Z1XZthZkDNFvfo-fuyHGBiF_JFhYDA"
 MAX_EDGE = 1800
 WEBP_QUALITY = 82
-HERO_SELECTION = [22, 18, 17]
+HERO_SELECTION = [126, 136, 381]
+HOME_PREVIEW_SELECTION = [126, 136, 129, 325, 321, 366, 373, 381, 412, 415, 454, 460]
 
 SELECTION = [
     14,
@@ -180,6 +181,13 @@ def build_gallery_ts(items: list[dict[str, object]]) -> str:
             *[
                 f'  "/galeria-noivos/{asset_stem(number)}.webp",'
                 for number in HERO_SELECTION
+            ],
+            "];",
+            "",
+            "export const coupleHomePreviewImages = [",
+            *[
+                f'  "/galeria-noivos/{asset_stem(number)}.webp",'
+                for number in HOME_PREVIEW_SELECTION
             ],
             "];",
             "",

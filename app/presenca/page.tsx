@@ -17,7 +17,7 @@ export default function PresencaPage() {
       <PageHero
         title="Confirme pelo seu convite"
         subtitle="Presenca"
-        imageSrc="/imagem-2.jpg"
+        imageSrc="/galeria-noivos/enim-325.webp"
         imageAlt="Isadora e Matheus"
         objectPosition="center 5%"
       />
@@ -32,7 +32,7 @@ export default function PresencaPage() {
           <div className="md:col-span-5">
             <div className="relative h-[420px] overflow-hidden border border-outline-variant/15">
               <Image
-                src="/imagem-3.jpg"
+                src="/galeria-noivos/enim-329.webp"
                 alt="Isadora e Matheus"
                 fill
                 priority

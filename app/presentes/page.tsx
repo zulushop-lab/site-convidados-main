@@ -137,7 +137,7 @@ export default function PresentesPage() {
       <PageHero 
         title="Experiências e Carinho" 
         subtitle="Lista de Presentes" 
-        imageSrc="/imagem-3.jpg" 
+        imageSrc="/galeria-noivos/enim-454.webp"
         imageAlt="Isadora e Matheus" 
         objectPosition="center 10%"
       />

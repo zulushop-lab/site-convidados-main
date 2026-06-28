@@ -14,7 +14,7 @@ export default function GaleriaPage() {
       <PageHero
         title="Galeria dos Noivos"
         subtitle="Pre-wedding"
-        images={coupleGalleryHeroImages.length > 0 ? coupleGalleryHeroImages : ['/imagem-1.jpg', '/imagem-2.jpg', '/imagem-3.jpg']}
+        images={coupleGalleryHeroImages.length > 0 ? coupleGalleryHeroImages : ['/galeria-noivos/enim-126.webp', '/galeria-noivos/enim-136.webp', '/galeria-noivos/enim-381.webp']}
         imageClassName="object-cover"
         imageAlt="Isadora e Matheus"
         containerClassName="mb-8"

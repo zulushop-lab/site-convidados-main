@@ -517,7 +517,22 @@ export const coupleGalleryImages: GalleryImage[] = [
 ];
 
 export const coupleGalleryHeroImages = [
-  "/galeria-noivos/enim-022.webp",
-  "/galeria-noivos/enim-018.webp",
-  "/galeria-noivos/enim-017.webp",
+  "/galeria-noivos/enim-126.webp",
+  "/galeria-noivos/enim-136.webp",
+  "/galeria-noivos/enim-381.webp",
+];
+
+export const coupleHomePreviewImages = [
+  "/galeria-noivos/enim-126.webp",
+  "/galeria-noivos/enim-136.webp",
+  "/galeria-noivos/enim-129.webp",
+  "/galeria-noivos/enim-325.webp",
+  "/galeria-noivos/enim-321.webp",
+  "/galeria-noivos/enim-366.webp",
+  "/galeria-noivos/enim-373.webp",
+  "/galeria-noivos/enim-381.webp",
+  "/galeria-noivos/enim-412.webp",
+  "/galeria-noivos/enim-415.webp",
+  "/galeria-noivos/enim-454.webp",
+  "/galeria-noivos/enim-460.webp",
 ];

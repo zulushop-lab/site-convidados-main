@@ -1,24 +1,23 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, ArrowRight, MapPin, Banknote, CreditCard, Check, Minus, Plus, Info, Loader2, Calendar, UserCheck, Gift } from 'lucide-react';
+import { Banknote, Calendar, Camera } from 'lucide-react';
 import { ImageSlider } from '@/components/ImageSlider';
 import { Countdown } from '@/components/Countdown';
-import dynamic from 'next/dynamic';
-import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { AnimatedText } from '@/components/AnimatedText';
 import { FadeIn } from '@/components/FadeIn';
-import { Magnet } from '@/components/Magnet';
 import { FocusRail } from '@/components/FocusRail';
 import { HomeMenuCards } from '@/components/HomeMenuCards';
 import { MarqueeGallery } from '@/components/MarqueeGallery';
 import { usePathname, useRouter } from 'next/navigation';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { TextScramble } from '@/components/TextScramble';
 import { NoiseOverlay } from '@/components/NoiseOverlay';
 import { SlideToUnlock } from '@/components/SlideToUnlock';
 import { TieLeaderboard } from '@/components/TieLeaderboard';
+import { HomeEventHighlights } from '@/components/HomeEventHighlights';
+import { coupleGalleryHeroImages, coupleGalleryImages } from '@/lib/gallery';
 
 export default function Home() {
   const pathname = usePathname();
@@ -29,13 +28,13 @@ export default function Home() {
       window.dispatchEvent(new Event('ais-loading-start'));
     }
   };
-  const heroImages = [
-    "/imagem-1.jpg",
-    "/imagem-2.jpg",
-    "/imagem-3.jpg"
+  const galleryImage = (index: number, fallback: string) => coupleGalleryImages[index]?.src ?? fallback;
+  const heroImages = coupleGalleryHeroImages.length > 0 ? coupleGalleryHeroImages : [
+    "/galeria-noivos/enim-126.webp",
+    "/galeria-noivos/enim-136.webp",
+    "/galeria-noivos/enim-381.webp"
   ];
 
-  const bgImageRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress: heroScroll } = useScroll({
@@ -163,18 +162,24 @@ export default function Home() {
                     </div>
                   }
                 />
-                <SlideToUnlock
-                  sliderText="Deslize para Presentear"
-                  onUnlock={() => {
-                    handleLinkClick('/presentes');
-                    setTimeout(() => router.push('/presentes'), 300);
-                  }}
-                  unlockedContent={
-                    <div className="flex items-center justify-center h-12 border border-white bg-white/10 text-white font-label uppercase tracking-[0.3em] text-[11px] rounded-sm backdrop-blur-sm px-10">
-                      Abrindo...
-                    </div>
-                  }
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    href="/eventos"
+                    onClick={() => handleLinkClick('/eventos')}
+                    className="flex h-12 items-center justify-center gap-2 rounded-sm border border-white/30 bg-white/10 px-4 font-label text-[10px] uppercase tracking-[0.22em] text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-black"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Eventos
+                  </Link>
+                  <Link
+                    href="/galeria"
+                    onClick={() => handleLinkClick('/galeria')}
+                    className="flex h-12 items-center justify-center gap-2 rounded-sm border border-gold/50 bg-gold px-4 font-label text-[10px] uppercase tracking-[0.22em] text-black transition-colors hover:bg-yellow-500"
+                  >
+                    <Camera className="h-4 w-4" />
+                    Galeria
+                  </Link>
+                </div>
               </FadeIn>
 
               <FadeIn delay={1.2} duration={1} className="mt-12 flex flex-col items-center gap-4">
@@ -212,53 +217,60 @@ export default function Home() {
               duration={1.2}
               speed={0.03}
             >
-              Tudo que você precisa saber sobre o grande dia
+              Fotos, eventos e caminhos principais para o grande dia
             </TextScramble>
           </FadeIn>
         </div>
         <HomeMenuCards />
       </section>
 
+      <HomeEventHighlights />
+
       <MarqueeGallery />
 
       <section id="historia" className="pb-24 pt-12 relative z-10 bg-surface text-on-surface">
         <div className="max-w-6xl mx-auto px-6 md:px-12 mb-24">
-           <AnimatedText text="Com quase 10 anos construindo juntos essa caminhada, focamos em cultivar amor, respeito e alegria. Nossa história é prova viva de que a parceira e companheirismo nos leva a lugares que jamais imaginamos. Esperamos você conosco nesse dia tão especial!" className="text-2xl sm:text-3xl md:text-4xl font-body italic font-light leading-relaxed max-w-4xl mx-auto" align="center" />
+           <AnimatedText text="Com quase 10 anos construindo juntos essa caminhada, focamos em cultivar amor, respeito e alegria. Nossa história é prova viva de que parceria e companheirismo nos levam a lugares que jamais imaginamos. Esperamos você conosco nesse dia tão especial!" className="text-2xl sm:text-3xl md:text-4xl font-body italic font-light leading-relaxed max-w-4xl mx-auto" align="center" />
         </div>
         <FocusRail items={[
           {
-            id: 1,
-            title: "O Início",
-            meta: "2017",
-            imageSrc: "/imagem-1.jpg",
-            href: "/#historia"
+            id: "cerimonia",
+            title: "Cerimônia na Catedral",
+            meta: "19:00",
+            description: "O sacramento do matrimônio abre a noite em Brasília.",
+            imageSrc: "/catedral-brasilia.png",
+            href: "/eventos"
           },
           {
-            id: 2,
-            title: "Crescendo Juntos",
-            meta: "2019",
-            imageSrc: "/imagem-2.jpg",
-            href: "/#historia"
+            id: "recepcao",
+            title: "Recepção no NAU",
+            meta: "21:00",
+            description: "Jantar, celebração e roteiro da noite em um só lugar.",
+            imageSrc: "/NAU.png",
+            href: "/eventos"
           },
           {
-            id: 3,
-            title: "A Celebração",
-            meta: "2022",
-            imageSrc: "/imagem-3.jpg",
-            href: "/#historia"
+            id: "pre-wedding",
+            title: "Galeria dos Noivos",
+            meta: "Pre-wedding",
+            description: "As fotos selecionadas do ensaio já estão na galeria.",
+            imageSrc: galleryImage(5, "/galeria-noivos/enim-136.webp"),
+            href: "/galeria"
           },
           {
-            id: 4,
-            title: "O Pôr do Sol",
-            meta: "2024",
-            imageSrc: "/imagem-1.jpg",
-            href: "/#historia"
+            id: "momentos",
+            title: "Momentos do Ensaio",
+            meta: "Fotos",
+            description: "Um caminho mais leve para entrar no clima antes do evento.",
+            imageSrc: galleryImage(19, "/galeria-noivos/enim-129.webp"),
+            href: "/galeria"
           },
           {
-            id: 5,
+            id: "grande-dia",
             title: "O Grande Dia",
             meta: "2026",
-            imageSrc: "/imagem-2.jpg",
+            description: "Horários, locais, traje e hospedagem estão reunidos nos detalhes do evento.",
+            imageSrc: galleryImage(22, "/galeria-noivos/enim-325.webp"),
             href: "/eventos"
           }
         ]} />

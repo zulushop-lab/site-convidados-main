@@ -4,6 +4,9 @@ import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { ImageWithSkeleton } from './ImageWithSkeleton';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+import { coupleHomePreviewImages } from '@/lib/gallery';
 
 export function MarqueeGallery() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -17,30 +20,51 @@ export function MarqueeGallery() {
   const x1 = useTransform(scrollYProgress, [0, 1], [0, -500]);
   const x2 = useTransform(scrollYProgress, [0, 1], [-500, 0]);
 
-  const images1 = [
-    '/imagem-1.jpg',
-    '/imagem-2.jpg',
-    '/imagem-3.jpg',
-    '/imagem-1.jpg',
-    '/imagem-2.jpg',
+  const images1 = coupleHomePreviewImages.slice(0, 6);
+  const images2 = coupleHomePreviewImages.slice(6, 12);
+  const fallbackImages1 = [
+    '/galeria-noivos/enim-126.webp',
+    '/galeria-noivos/enim-136.webp',
+    '/galeria-noivos/enim-129.webp',
+    '/galeria-noivos/enim-325.webp',
+    '/galeria-noivos/enim-321.webp',
   ];
 
-  const images2 = [
-    '/imagem-3.jpg',
-    '/imagem-1.jpg',
-    '/imagem-2.jpg',
-    '/imagem-3.jpg',
-    '/imagem-1.jpg',
+  const fallbackImages2 = [
+    '/galeria-noivos/enim-366.webp',
+    '/galeria-noivos/enim-373.webp',
+    '/galeria-noivos/enim-381.webp',
+    '/galeria-noivos/enim-412.webp',
+    '/galeria-noivos/enim-454.webp',
   ];
+  const firstRowImages = images1.length > 0 ? images1 : fallbackImages1;
+  const secondRowImages = images2.length > 0 ? images2 : fallbackImages2;
 
   return (
     <>
       <section ref={containerRef} className="py-24 overflow-hidden bg-surface relative">
+        <div className="mx-auto mb-12 flex max-w-7xl flex-col gap-6 px-6 md:flex-row md:items-end md:justify-between md:px-12">
+          <div>
+            <span className="mb-4 block font-label text-[10px] uppercase tracking-[0.3em] text-secondary">
+              Galeria dos noivos
+            </span>
+            <h2 className="font-headline text-4xl italic leading-tight text-on-surface md:text-6xl">
+              Uma amostra do ensaio.
+            </h2>
+          </div>
+          <Link
+            href="/galeria"
+            className="inline-flex w-fit items-center gap-3 rounded-sm border border-gold/40 px-6 py-3 font-label text-xs uppercase tracking-[0.24em] text-on-surface transition-colors hover:bg-gold hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          >
+            Ver Galeria
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
         <div className="flex flex-col gap-8">
           <motion.div style={{ x: x1 }} className="flex gap-8 w-max">
-            {images1.map((src, idx) => (
+            {firstRowImages.map((src, idx) => (
               <div 
-                key={idx} 
+                key={`${src}-${idx}`}
                 onClick={() => setFullscreenImage(src)}
                 className="relative w-64 h-80 md:w-80 md:h-96 rounded-2xl overflow-hidden shrink-0 cursor-pointer group"
               >
@@ -49,9 +73,9 @@ export function MarqueeGallery() {
             ))}
           </motion.div>
           <motion.div style={{ x: x2 }} className="flex gap-8 w-max">
-            {images2.map((src, idx) => (
+            {secondRowImages.map((src, idx) => (
               <div 
-                key={idx} 
+                key={`${src}-${idx}`}
                 onClick={() => setFullscreenImage(src)}
                 className="relative w-64 h-80 md:w-80 md:h-96 rounded-2xl overflow-hidden shrink-0 cursor-pointer group"
               >
