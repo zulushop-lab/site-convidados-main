@@ -30,7 +30,7 @@ const guest = () =>
 
 const admin = () =>
   testEnv.authenticatedContext("admin-user", {
-    email: "matheusrs180@gmail.com",
+    email: "casamentomatisa@gmail.com",
     email_verified: true,
   });
 

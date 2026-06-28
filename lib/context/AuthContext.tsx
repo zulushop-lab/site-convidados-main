@@ -20,8 +20,7 @@ import React, {
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth, ensureAnonymousAuth } from "@/lib/firebase";
-
-const ADMIN_EMAIL = "matheusrs180@gmail.com";
+import { isAllowedAdminEmail } from "@/lib/adminAccess";
 
 interface AuthContextValue {
   user: User | null;
@@ -62,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       uid: user?.uid ?? null,
       isLoading,
       isAnonymous: user?.isAnonymous ?? false,
-      isAdmin: !!email && email === ADMIN_EMAIL && emailVerified,
+      isAdmin: isAllowedAdminEmail(email) && emailVerified,
     };
   }, [user, isLoading]);
 
