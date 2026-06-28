@@ -29,11 +29,21 @@ export default function Home() {
     }
   };
   const galleryImage = (index: number, fallback: string) => coupleGalleryImages[index]?.src ?? fallback;
-  const heroImages = coupleGalleryHeroImages.length > 0 ? coupleGalleryHeroImages : [
+  const desktopHeroImages = coupleGalleryHeroImages.length > 0 ? coupleGalleryHeroImages : [
     "/galeria-noivos/enim-126.webp",
     "/galeria-noivos/enim-136.webp",
     "/galeria-noivos/enim-381.webp"
   ];
+  const mobileHeroImages = [
+    "/galeria-noivos/enim-131.webp",
+    "/galeria-noivos/enim-326.webp",
+    "/galeria-noivos/enim-071.webp"
+  ];
+  const heroImages = desktopHeroImages.map((src, index) => ({
+    src,
+    mobileSrc: mobileHeroImages[index] ?? src,
+    className: "object-center"
+  }));
 
   const heroRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +104,7 @@ export default function Home() {
         >
           <ImageSlider 
             images={heroImages} 
-            className="w-full h-full grayscale-[5%] scale-110" 
+            className="w-full h-full grayscale-[5%] md:scale-110"
             imageClassName="object-cover"
             alt="Isadora e Matheus"
             interval={5000}
