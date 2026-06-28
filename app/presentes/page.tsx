@@ -17,6 +17,9 @@ type GiftCategoryFilter = 'Todas' | GiftCategory;
 type PriceRange = 'Qualquer' | '0-200' | '200-500' | '500+';
 
 const CATEGORIES: GiftCategoryFilter[] = ['Todas', ...GIFT_CATEGORIES];
+const CATEGORY_ORDER = new Map<GiftCategory, number>(
+  GIFT_CATEGORIES.map((category, index) => [category, index] as const)
+);
 
 const PRICE_RANGES: { label: string; value: PriceRange }[] = [
   { label: 'Qualquer Preço', value: 'Qualquer' },
@@ -27,7 +30,14 @@ const PRICE_RANGES: { label: string; value: PriceRange }[] = [
 
 export default function PresentesPage() {
   const router = useRouter();
-  const gifts = GIFT_CATALOG;
+  const gifts = useMemo(
+    () =>
+      [...GIFT_CATALOG].sort((a, b) => {
+        const categoryOrder = (CATEGORY_ORDER.get(a.category) ?? 99) - (CATEGORY_ORDER.get(b.category) ?? 99);
+        return categoryOrder || a.order - b.order;
+      }),
+    []
+  );
   const [customAmount, setCustomAmount] = useState('');
   const [activeCategory, setActiveCategory] = useState<GiftCategoryFilter>('Todas');
   const [activePriceRange, setActivePriceRange] = useState<PriceRange>('Qualquer');
