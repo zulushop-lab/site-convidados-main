@@ -28,6 +28,31 @@ const PRICE_RANGES: { label: string; value: PriceRange }[] = [
   { label: 'Acima de R$ 1.500', value: '500+' },
 ];
 
+const FREE_CONTRIBUTION_ITEM = 'Contribuição Livre';
+const PAYMENT_MAX_AMOUNT = 100000;
+const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function sanitizeBrlAmountInput(value: string): string {
+  const digitsAndComma = value.replace(/\./g, '').replace(/[^0-9,]/g, '');
+  const commaIndex = digitsAndComma.indexOf(',');
+
+  if (commaIndex === -1) return digitsAndComma;
+
+  const reais = digitsAndComma.slice(0, commaIndex);
+  const cents = digitsAndComma.slice(commaIndex + 1).replace(/,/g, '').slice(0, 2);
+  return `${reais},${cents}`;
+}
+
+function parseBrlAmount(value: string): number {
+  const normalized = value.trim().replace(/\./g, '').replace(',', '.');
+  if (!normalized || normalized === '.') return Number.NaN;
+  return Number.parseFloat(normalized);
+}
+
+function toAmountParam(value: number): string {
+  return value.toFixed(2).replace('.', ',');
+}
+
 export default function PresentesPage() {
   const router = useRouter();
   const gifts = useMemo(
@@ -47,20 +72,38 @@ export default function PresentesPage() {
   const [visibleCount, setVisibleCount] = useState(12);
 
   const customAmountRef = useRef<HTMLDivElement>(null);
+  const customAmountValue = useMemo(() => parseBrlAmount(customAmount), [customAmount]);
+  const customAmountError = useMemo(() => {
+    if (!customAmount) return '';
+    if (!Number.isFinite(customAmountValue) || customAmountValue <= 0) {
+      return 'Informe um valor maior que zero.';
+    }
+    if (customAmountValue > PAYMENT_MAX_AMOUNT) {
+      return `O valor máximo por pagamento é ${currency.format(PAYMENT_MAX_AMOUNT)}.`;
+    }
+    return '';
+  }, [customAmount, customAmountValue]);
+  const canSubmitCustomAmount = !!customAmount && !customAmountError;
+  const formattedCustomAmount = Number.isFinite(customAmountValue)
+    ? currency.format(customAmountValue)
+    : currency.format(0);
 
   const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^0-9,]/g, '');
-    setCustomAmount(value);
+    setCustomAmount(sanitizeBrlAmountInput(e.target.value));
   };
 
   const handleCustomContribution = () => {
-    if (customAmount) {
+    if (canSubmitCustomAmount) {
       setIsConfirmModalOpen(true);
     }
   };
 
   const confirmContribution = () => {
-    router.push(`/presentes/checkout?amount=${customAmount}&item=Contribuição Livre`);
+    if (!canSubmitCustomAmount) return;
+
+    const amountParam = encodeURIComponent(toAmountParam(customAmountValue));
+    const itemParam = encodeURIComponent(FREE_CONTRIBUTION_ITEM);
+    router.push(`/presentes/checkout?amount=${amountParam}&item=${itemParam}`);
   };
 
   const filteredGifts = useMemo(() => {
@@ -132,8 +175,8 @@ export default function PresentesPage() {
                     <span className="font-label text-[10px] uppercase tracking-widest text-secondary">Item</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="font-headline text-xl italic text-on-surface">R$ {customAmount}</span>
-                    <span className="font-body text-sm font-medium text-primary">Contribuição Livre</span>
+                    <span className="font-headline text-xl italic text-on-surface">{formattedCustomAmount}</span>
+                    <span className="font-body text-sm font-medium text-primary">{FREE_CONTRIBUTION_ITEM}</span>
                   </div>
                 </div>
               </div>
@@ -544,14 +587,21 @@ export default function PresentesPage() {
                   placeholder="0,00"
                   value={customAmount}
                   onChange={handleCustomAmountChange}
+                  aria-invalid={!!customAmountError}
+                  aria-describedby={customAmountError ? 'custom-amount-error' : undefined}
                   className="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 pl-8 focus:outline-none focus:border-primary font-body text-xl transition-colors text-on-surface"
                 />
               </div>
+              {customAmountError && (
+                <p id="custom-amount-error" className="mt-2 font-body text-xs text-primary">
+                  {customAmountError}
+                </p>
+              )}
             </div>
             <button 
               onClick={handleCustomContribution}
-              disabled={!customAmount}
-              className={`w-full md:w-auto px-12 py-4 block font-label uppercase tracking-widest text-xs text-center rounded-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${customAmount ? 'btn-primary active:scale-95' : 'bg-outline-variant/30 text-on-surface-variant cursor-not-allowed opacity-50'}`}
+              disabled={!canSubmitCustomAmount}
+              className={`w-full md:w-auto px-12 py-4 block font-label uppercase tracking-widest text-xs text-center rounded-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${canSubmitCustomAmount ? 'btn-primary active:scale-95' : 'bg-outline-variant/30 text-on-surface-variant cursor-not-allowed opacity-50'}`}
             >
               Contribuir
             </button>

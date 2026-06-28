@@ -1,9 +1,16 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Banknote, CreditCard, ExternalLink, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Banknote, CreditCard, ExternalLink, Loader2, ShieldCheck, Users } from 'lucide-react';
+import { useGuest } from '@/lib/context/GuestContext';
+
+const PAYMENT_MAX_AMOUNT = 100000;
+const brlFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
 
 const parseBrlAmount = (value: string) => {
   const cleanedValue = value.trim().replace(/[^\d,.]/g, '');
@@ -16,6 +23,7 @@ const parseBrlAmount = (value: string) => {
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+  const { identity } = useGuest();
   const amountStr = searchParams.get('amount') || '0';
   const item = searchParams.get('item') || 'Contribuicao';
 
@@ -24,12 +32,47 @@ function CheckoutContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
+  const amountValue = useMemo(() => parseBrlAmount(amountStr), [amountStr]);
+  const isAmountValid =
+    Number.isFinite(amountValue) && amountValue > 0 && amountValue <= PAYMENT_MAX_AMOUNT;
+  const displayAmount = isAmountValid ? brlFormatter.format(amountValue) : 'valor inválido';
+  const amountError = isAmountValid
+    ? ''
+    : `O valor do pagamento deve ser maior que zero e no maximo ${brlFormatter.format(PAYMENT_MAX_AMOUNT)}.`;
+
+  const identityDefaults = useMemo(() => {
+    if (!identity) return null;
+
+    const selectedGuest =
+      identity.guests.find((guest) => guest.id === identity.guestId) ??
+      identity.guests.find((guest) => guest.isMainGuest) ??
+      (identity.guests.length === 1 ? identity.guests[0] : null);
+
+    return {
+      familyId: identity.familyId,
+      familyName: identity.familyName,
+      guestId: identity.guestId,
+      guestName: selectedGuest?.name ?? '',
+      guestEmail: selectedGuest?.email ?? '',
+    };
+  }, [identity]);
+
+  useEffect(() => {
+    if (!identityDefaults) return;
+
+    if (identityDefaults.guestName) {
+      setDonorName((current) => current || identityDefaults.guestName);
+    }
+    if (identityDefaults.guestEmail) {
+      setDonorEmail((current) => current || identityDefaults.guestEmail);
+    }
+  }, [identityDefaults]);
+
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
 
-    const amountValue = parseBrlAmount(amountStr);
-    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+    if (!isAmountValid) {
       setError('Informe um valor de contribuicao valido.');
       return;
     }
@@ -50,6 +93,8 @@ function CheckoutContent() {
           item,
           donorName: donorName.trim(),
           donorEmail: donorEmail.trim(),
+          ...(identityDefaults?.familyId ? { familyId: identityDefaults.familyId } : {}),
+          ...(identityDefaults?.guestId ? { guestId: identityDefaults.guestId } : {}),
         }),
       });
 
@@ -85,7 +130,7 @@ function CheckoutContent() {
         <h1 className="font-headline text-5xl italic text-on-surface mb-4">Finalizar Presente</h1>
         <p className="font-body text-on-surface-variant">
           Voce esta contribuindo com{' '}
-          <strong className="text-on-surface font-medium">R$ {amountStr}</strong> para{' '}
+          <strong className="text-on-surface font-medium">{displayAmount}</strong> para{' '}
           <strong className="text-on-surface font-medium">{item}</strong>.
         </p>
       </div>
@@ -93,6 +138,16 @@ function CheckoutContent() {
       <form onSubmit={handlePayment} className="space-y-8">
         <section className="bg-surface-container-lowest border border-outline-variant/15 p-8 md:p-12">
           <h2 className="font-headline text-2xl italic text-primary mb-6">Seus Dados</h2>
+
+          {identityDefaults?.familyId && (
+            <div className="mb-6 border border-outline-variant/20 bg-surface-container-low p-4 flex items-center gap-3">
+              <Users className="w-5 h-5 text-primary" aria-hidden="true" />
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+                Vinculado a {identityDefaults.familyName}
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label htmlFor="donor-name" className="font-label text-[10px] uppercase tracking-widest text-secondary">
@@ -160,9 +215,15 @@ function CheckoutContent() {
             </div>
           )}
 
+          {amountError && (
+            <div className="border border-primary/30 bg-primary/5 p-4">
+              <p className="font-body text-sm text-primary leading-relaxed">{amountError}</p>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={isProcessing}
+            disabled={isProcessing || !isAmountValid}
             className="btn-primary w-full py-5 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isProcessing ? (
