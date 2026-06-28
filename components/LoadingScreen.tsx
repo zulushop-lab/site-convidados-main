@@ -12,8 +12,7 @@ export function LoadingScreen() {
 
   // A animação cinematográfica de abertura foi movida para DEPOIS da
   // confirmação de presença (ver CathedralReveal). Aqui mantemos apenas o
-  // loader leve de troca de rota — a capa do convite (CathedralIntro) é quem
-  // cobre a primeira tela.
+  // loader leve de troca de rota.
   useEffect(() => {
     setMounted(true);
   }, []);

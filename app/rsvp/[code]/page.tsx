@@ -7,7 +7,6 @@ import { SwipeToConfirm } from "@/components/SwipeToConfirm";
 import { CathedralReveal } from "@/components/CathedralReveal";
 import { motion, AnimatePresence } from "motion/react";
 import { db, ensureAnonymousAuth } from "@/lib/firebase";
-import { markSkipCover } from "@/lib/store/useAppStore";
 import { useGuest } from "@/lib/context/GuestContext";
 import type { Guest } from "@/domain/types";
 import { doc, getDoc, query, collection, where, getDocs, setDoc, serverTimestamp } from "firebase/firestore";
@@ -161,8 +160,6 @@ function RSVPAuthContent({ params }: { params: Promise<{ code: string }> }) {
   };
 
   const handleRevealComplete = () => {
-    // A 3D já tocou aqui; marca para a home pular a capa CathedralIntro.
-    markSkipCover();
     // Navegação "hard" em vez de router.push (SPA): WebViews in-app
     // (WhatsApp/Instagram) frequentemente não completam a navegação por
     // history API, deixando a tela travada. Uma carga de página inteira é

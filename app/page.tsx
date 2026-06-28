@@ -20,8 +20,6 @@ import { NoiseOverlay } from '@/components/NoiseOverlay';
 import { SlideToUnlock } from '@/components/SlideToUnlock';
 import { TieLeaderboard } from '@/components/TieLeaderboard';
 
-import { CathedralIntro } from '@/components/CathedralIntro';
-
 export default function Home() {
   const pathname = usePathname();
   const router = useRouter();
@@ -88,7 +86,6 @@ export default function Home() {
 
   return (
     <main className="relative pb-24 overflow-x-hidden scroll-smooth">
-      <CathedralIntro />
       <NoiseOverlay />
       {/* Hero Section */}
       <section id="hero" ref={heroRef} className="relative h-[90vh] md:h-screen flex flex-col mb-16 overflow-hidden">

@@ -1,26 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Heart } from 'lucide-react';
-import { useAppStore, clearSkipCover } from '@/lib/store/useAppStore';
 
 export function Footer() {
-  const router = useRouter();
-  const setHomeState = useAppStore((s) => s.setHomeState);
-
-  // Reexibe a capa do convite: volta o estado para "capa visível" e leva o
-  // usuário para a home, onde a CathedralIntro cobre a viewport novamente.
-  const reopenInvite = () => {
-    // Limpa a flag de "pular capa" (setada após confirmar via /rsvp) para que a
-    // capa volte de forma consistente, inclusive após um refresh posterior.
-    clearSkipCover();
-    setHomeState('ANIMATING_LOADING');
-    router.push('/');
-  };
-
   return (
     <div className="w-full px-4 md:px-8 pb-32 md:pb-32 pt-10 flex justify-center z-10 relative">
       <motion.footer
@@ -49,15 +33,8 @@ export function Footer() {
           />
         </div>
         <h3 className="text-2xl md:text-3xl font-playfair italic text-gold mb-6 mt-2">Isadora & Matheus</h3>
-        
+
         <div className="pt-8 border-t border-gold/10 w-full max-w-md flex flex-col items-center justify-center gap-4">
-          <button
-            onClick={reopenInvite}
-            className="text-[10px] font-label uppercase tracking-[0.3em] text-gold/60 hover:text-gold transition-colors duration-300 border border-gold/20 hover:border-gold/40 px-6 py-2.5 rounded-full"
-          >
-            Rever o Convite
-          </button>
-          
           <p className="text-sm font-headline italic opacity-80">
             2026... até o amor <Heart className="inline w-3 h-3 text-gold mx-1 fill-gold/50" />
           </p>
@@ -66,4 +43,3 @@ export function Footer() {
     </div>
   );
 }
-
