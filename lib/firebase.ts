@@ -19,13 +19,8 @@ export const ensureAnonymousAuth = async () => {
 };
 
 export const signInWithGoogle = async () => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
-  } catch (error) {
-    console.error("Error signing in with Google", error);
-    throw error;
-  }
+  const result = await signInWithPopup(auth, googleProvider);
+  return result.user;
 };
 
 export const signOutFromFirebase = async () => {

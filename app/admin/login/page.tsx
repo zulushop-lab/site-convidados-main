@@ -8,6 +8,22 @@ import { isAllowedAdminEmail } from '@/lib/adminAccess';
 import { useAuth } from '@/lib/context/AuthContext';
 import { signInWithGoogle, signOutFromFirebase } from '@/lib/firebase';
 
+function getLoginErrorMessage(error: unknown): string {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: unknown }).code)
+    : '';
+
+  if (code === 'auth/unauthorized-domain') {
+    return 'O Firebase ainda nao autorizou localhost para login Google. Adicione localhost em Firebase Authentication > Settings > Authorized domains.';
+  }
+
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Login cancelado antes de concluir.';
+  }
+
+  return 'Nao foi possivel entrar com Google. Tente novamente.';
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const { user, isLoading, isAdmin } = useAuth();
@@ -33,8 +49,8 @@ export default function AdminLoginPage() {
       }
 
       router.replace('/admin');
-    } catch {
-      setError('Nao foi possivel entrar com Google. Tente novamente.');
+    } catch (err) {
+      setError(getLoginErrorMessage(err));
     } finally {
       setIsSigningIn(false);
     }
