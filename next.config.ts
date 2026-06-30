@@ -3,10 +3,10 @@ import type {NextConfig} from 'next';
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://images.unsplash.com",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://firebaseinstallations.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com ws://localhost:* http://localhost:*",
+  "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebasedatabase.app https://firebaseinstallations.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://*.firebaseio.com ws://localhost:* http://localhost:*",
   "font-src 'self' data:",
   "media-src 'self' https://upload.wikimedia.org",
   "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",

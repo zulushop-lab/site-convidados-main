@@ -18,6 +18,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth, ensureAnonymousAuth } from "@/lib/firebase";
 import { isAllowedAdminEmail } from "@/lib/adminAccess";
@@ -33,17 +34,19 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const isAdminRoute = pathname?.startsWith("/admin") ?? false;
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setIsLoading(false);
 
       // Sem sessao ainda -> dispara sign-in anonimo. O proprio listener reentra
       // quando o uid for emitido, atualizando o estado. Idempotente.
-      if (!nextUser) {
+      if (!nextUser && !isAdminRoute) {
         ensureAnonymousAuth().catch((error) => {
           console.error("Anonymous auth failed:", error);
         });
@@ -51,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [pathname]);
 
   const value = useMemo<AuthContextValue>(() => {
     const email = user?.email ?? null;

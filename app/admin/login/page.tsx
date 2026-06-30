@@ -1,12 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, LockKeyhole, LogIn, ShieldAlert } from 'lucide-react';
+import type { User } from 'firebase/auth';
 import { isAllowedAdminEmail } from '@/lib/adminAccess';
 import { useAuth } from '@/lib/context/AuthContext';
-import { signInWithGoogle, signOutFromFirebase } from '@/lib/firebase';
+import {
+  getGoogleRedirectUser,
+  signInWithGooglePopup,
+  signInWithGoogleRedirect,
+  signOutFromFirebase,
+} from '@/lib/firebase';
+
+function prefersRedirectSignIn(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const userAgent = window.navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent)
+    || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+  const isMobile = isIOS || /Android|Mobile|Mobi/i.test(userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+
+  return isMobile || isSafari;
+}
+
+function shouldFallbackToRedirect(error: unknown): boolean {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: unknown }).code)
+    : '';
+
+  return [
+    'auth/cancelled-popup-request',
+    'auth/operation-not-supported-in-this-environment',
+    'auth/popup-blocked',
+    'auth/popup-closed-by-user',
+    'auth/web-storage-unsupported',
+  ].includes(code);
+}
 
 function getLoginErrorMessage(error: unknown): string {
   const code = typeof error === 'object' && error !== null && 'code' in error
@@ -14,14 +46,20 @@ function getLoginErrorMessage(error: unknown): string {
     : '';
 
   if (code === 'auth/unauthorized-domain') {
-    return 'O Firebase ainda nao autorizou localhost para login Google. Adicione localhost em Firebase Authentication > Settings > Authorized domains.';
+    return 'O dominio atual ainda nao esta autorizado no Firebase Authentication. Adicione este dominio em Settings > Authorized domains.';
   }
 
   if (code === 'auth/popup-closed-by-user') {
     return 'Login cancelado antes de concluir.';
   }
 
-  return 'Nao foi possivel entrar com Google. Tente novamente.';
+  if (code === 'auth/web-storage-unsupported') {
+    return 'O navegador bloqueou o armazenamento necessario para o login. No iPhone, teste fora do modo privado ou libere cookies/armazenamento do site.';
+  }
+
+  return code
+    ? `Nao foi possivel entrar com Google (${code}). Tente novamente.`
+    : 'Nao foi possivel entrar com Google. Tente novamente.';
 }
 
 export default function AdminLoginPage() {
@@ -29,6 +67,17 @@ export default function AdminLoginPage() {
   const { user, isLoading, isAdmin } = useAuth();
   const [error, setError] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const redirectHandledRef = useRef(false);
+
+  const finishAdminLogin = useCallback(async (nextUser: User) => {
+    if (!nextUser.emailVerified || !isAllowedAdminEmail(nextUser.email)) {
+      await signOutFromFirebase();
+      setError('Este Google nao esta autorizado para o painel dos noivos.');
+      return;
+    }
+
+    router.replace('/admin');
+  }, [router]);
 
   useEffect(() => {
     if (!isLoading && isAdmin) {
@@ -36,20 +85,48 @@ export default function AdminLoginPage() {
     }
   }, [isAdmin, isLoading, router]);
 
+  useEffect(() => {
+    if (redirectHandledRef.current) return;
+    redirectHandledRef.current = true;
+
+    let isMounted = true;
+    setIsSigningIn(true);
+
+    getGoogleRedirectUser()
+      .then(async (redirectUser) => {
+        if (!isMounted || !redirectUser) return;
+        await finishAdminLogin(redirectUser);
+      })
+      .catch((err) => {
+        if (isMounted) setError(getLoginErrorMessage(err));
+      })
+      .finally(() => {
+        if (isMounted) setIsSigningIn(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [finishAdminLogin]);
+
   const handleLogin = async () => {
     setError('');
     setIsSigningIn(true);
 
     try {
-      const nextUser = await signInWithGoogle();
-      if (!nextUser.emailVerified || !isAllowedAdminEmail(nextUser.email)) {
-        await signOutFromFirebase();
-        setError('Este Google nao esta autorizado para o painel dos noivos.');
+      if (prefersRedirectSignIn()) {
+        await signInWithGoogleRedirect();
         return;
       }
 
-      router.replace('/admin');
+      const nextUser = await signInWithGooglePopup();
+      await finishAdminLogin(nextUser);
     } catch (err) {
+      if (shouldFallbackToRedirect(err)) {
+        await signInWithGoogleRedirect();
+        return;
+      }
+
       setError(getLoginErrorMessage(err));
     } finally {
       setIsSigningIn(false);
