@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Banknote, Calendar, Camera } from 'lucide-react';
+import { Banknote, Calendar, Camera, LockKeyhole } from 'lucide-react';
 import { ImageSlider } from '@/components/ImageSlider';
 import { Countdown } from '@/components/Countdown';
 import { motion, useScroll, useTransform } from 'motion/react';
@@ -157,6 +157,16 @@ export default function Home() {
 
               <FadeIn delay={0.65} y={20} className="mt-[36px] mb-4 w-full flex justify-center">
                 <Countdown targetDate="2026-09-03T00:00:00" />
+              </FadeIn>
+
+              <FadeIn delay={0.72} y={10} className="mt-1 flex justify-center">
+                <Link
+                  href="/admin/login"
+                  aria-label="Acesso restrito dos noivos"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-white/15 text-white/35 transition-colors hover:border-white/35 hover:text-white/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/60"
+                >
+                  <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
               </FadeIn>
 
               <FadeIn delay={0.8} y={30} className="flex flex-col gap-4 pt-6 w-full max-w-sm mx-auto justify-center px-4">

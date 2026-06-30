@@ -12,7 +12,8 @@
     "test:rules:baseline": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-baseline.mjs",
     "test:rules:hardened": "node scripts/run-firestore-rules-test.mjs scripts/test-firestore-rules-hardened.mjs",
     "seed:gifts": "node scripts/seed-gifts.mjs",
-    "seed:families": "node scripts/seed-families.mjs"
+    "seed:families": "node scripts/seed-families.mjs",
+    "guest:export": "python scripts/build-rsvp-operational-files.py"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

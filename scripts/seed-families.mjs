@@ -112,15 +112,16 @@ function buildFamilies(rows) {
     const line = index + 2; // +2: header + 1-based
     if (!idFamilia) errors.push(`linha ${line}: id_familia vazio`);
     if (!nomeFamilia) errors.push(`linha ${line}: nome_familia vazio`);
-    if (!phone) errors.push(`linha ${line}: telefone_whatsapp vazio`);
-    else if (!/^\+\d{8,15}$/.test(phone)) errors.push(`linha ${line}: telefone fora do formato E.164 (${phone})`);
+    if (phone && !/^\+\d{8,15}$/.test(phone)) errors.push(`linha ${line}: telefone fora do formato E.164 (${phone})`);
     if (!nomeConvidado) errors.push(`linha ${line}: nome_convidado vazio`);
     if (!idFamilia || !nomeConvidado) return;
 
     if (!families.has(idFamilia)) {
-      families.set(idFamilia, { id: idFamilia, name: nomeFamilia, phone, guests: [] });
+      families.set(idFamilia, { id: idFamilia, name: nomeFamilia, phone: "", guests: [] });
     }
     const fam = families.get(idFamilia);
+    if (!fam.phone && phone) fam.phone = phone;
+    if (eResponsavel && phone) fam.phone = phone;
     const guestId = `${slugify(idFamilia)}_${slugify(nomeConvidado)}`;
     fam.guests.push({
       id: guestId,
@@ -136,6 +137,9 @@ function buildFamilies(rows) {
   for (const fam of families.values()) {
     if (!fam.guests.some((g) => g.isMainGuest) && fam.guests[0]) {
       fam.guests[0].isMainGuest = true;
+    }
+    if (!fam.phone) {
+      errors.push(`familia ${fam.id}: telefone_whatsapp vazio para o grupo`);
     }
   }
 
