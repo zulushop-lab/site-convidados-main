@@ -56,6 +56,11 @@ function asNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function asBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  return typeof value === 'string' && value.trim().toLowerCase() === 'true';
+}
+
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
@@ -194,7 +199,7 @@ function readOperationalOverview() {
       { label: 'Confirmado', value: 0 },
     ],
     dispatchStatusCounts,
-    pendingGroupList: pendingRows.slice(0, 20).map((row) => ({
+    pendingGroupList: pendingRows.map((row) => ({
       id: row.id_familia,
       name: row.nome_familia || row.id_familia,
       names: row.nomes_grupo,
@@ -243,11 +248,19 @@ export async function GET(request: Request) {
     id: doc.id,
     familyId: asString(doc.data().familyId),
     name: asString(doc.data().name, doc.id),
-    isChild: doc.data().isChild === true,
+    isChild: asBoolean(doc.data().isChild),
+    isMainGuest: asBoolean(doc.data().isMainGuest),
   }));
 
   const familyById = new Map(families.map((family) => [family.id, family]));
   const guestById = new Map(guests.map((guest) => [guest.id, guest]));
+  const guestsByFamilyId = guests.reduce<Map<string, typeof guests>>((acc, guest) => {
+    if (!guest.familyId) return acc;
+    const familyGuests = acc.get(guest.familyId) ?? [];
+    familyGuests.push(guest);
+    acc.set(guest.familyId, familyGuests);
+    return acc;
+  }, new Map());
   const rsvpFamilyIds = new Set<string>();
   const confirmedGuestIds = new Set<string>();
 
@@ -311,20 +324,33 @@ export async function GET(request: Request) {
     return total + uniquePhones.size;
   }, 0);
   const sentFamilies = families.filter((family) => family.inviteStatus === 'sent').length;
+  const operations = readOperationalOverview();
+  const firstLotFamilyIds = new Set<string>(operations.firstLotFamilyIds);
+  const hasFirstLotIds = firstLotFamilyIds.size > 0;
   const pendingFamilies = families
     .filter((family) => !rsvpFamilyIds.has(family.id))
     .map((family) => ({
       id: family.id,
       name: family.name,
-      guestsCount: guests.filter((guest) => guest.familyId === family.id).length,
+      listType: hasFirstLotIds && !firstLotFamilyIds.has(family.id) ? 'extra' : 'first_lot',
+      guests: [...(guestsByFamilyId.get(family.id) ?? [])]
+        .sort((a, b) => {
+          if (a.isMainGuest !== b.isMainGuest) return a.isMainGuest ? -1 : 1;
+          if (a.isChild !== b.isChild) return a.isChild ? 1 : -1;
+          return a.name.localeCompare(b.name, 'pt-BR');
+        })
+        .map((guest) => ({
+          id: guest.id,
+          name: guest.name,
+          isChild: guest.isChild,
+          isMainGuest: guest.isMainGuest,
+        })),
+      guestsCount: guestsByFamilyId.get(family.id)?.length ?? 0,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
-  const operations = readOperationalOverview();
   const plannedFamilies = operations.firstLotFamilies || totalFamilies;
   const plannedDispatchChannels = operations.dispatchChannels || firebaseDispatchChannels;
-  const firstLotFamilyIds = new Set<string>(operations.firstLotFamilyIds);
-  const hasFirstLotIds = firstLotFamilyIds.size > 0;
   const registeredFirstLotFamilies = hasFirstLotIds
     ? families.filter((family) => firstLotFamilyIds.has(family.id)).length
     : totalFamilies;
@@ -371,7 +397,9 @@ export async function GET(request: Request) {
       pendingGuests: Math.max(totalGuests - confirmedGuests, 0),
       childGuests: guests.filter((guest) => guest.isChild).length,
       recent: sortByCreatedAtDesc(recentRsvps).slice(0, 10),
-      pendingFamilyList: pendingFamilies.slice(0, 20),
+      pendingFirstLotFamilies: pendingFamilies.filter((family) => family.listType === 'first_lot').length,
+      pendingExtraFamilies: pendingFamilies.filter((family) => family.listType === 'extra').length,
+      pendingFamilyList: pendingFamilies,
     },
     payments: {
       summary: paymentSummary,
