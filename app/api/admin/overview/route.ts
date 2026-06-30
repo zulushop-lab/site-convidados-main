@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import fs from 'node:fs';
+import path from 'node:path';
 import { isAllowedAdminEmail, normalizeAdminEmail } from '@/lib/adminAccess';
 import { getAdminAuth, getAdminDb } from '@/lib/server/firebaseAdmin';
 
@@ -54,6 +56,12 @@ function asNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+}
+
 function asStatus(value: unknown): PaymentStatus {
   return PAYMENT_STATUSES.includes(value as PaymentStatus) ? (value as PaymentStatus) : 'unknown';
 }
@@ -81,6 +89,118 @@ function sortByCreatedAtDesc<T extends { createdAt: string | null }>(items: T[])
     const right = b.createdAt ? Date.parse(b.createdAt) : 0;
     return right - left;
   });
+}
+
+function parseCsv(text: string): Record<string, string>[] {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n').filter((line) => line.trim().length > 0);
+  if (!lines.length) return [];
+
+  const splitLine = (line: string) => {
+    const cells: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      if (char === '"') {
+        if (inQuotes && line[index + 1] === '"') {
+          current += '"';
+          index += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        cells.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    cells.push(current.trim());
+    return cells;
+  };
+
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const cells = splitLine(line);
+    return Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? '']));
+  });
+}
+
+function readOperationalOverview() {
+  const outputDir = path.join(process.cwd(), 'output', 'convites');
+  const summaryPath = path.join(outputDir, 'rsvp-operacional-resumo.json');
+  const seedPath = path.join(outputDir, 'planilha-convidados-seed.csv');
+  const dispatchPath = path.join(outputDir, 'disparo-primeiro-lote.csv');
+  const pendingPath = path.join(outputDir, 'grupos-pendentes-contato.csv');
+
+  if (!fs.existsSync(summaryPath)) {
+    return {
+      available: false,
+      sourceXlsx: null,
+      firstLotFamilies: 0,
+      firstLotGuests: 0,
+      dispatchChannels: 0,
+      pendingGroups: 0,
+      linksReady: false,
+      firstLotFamilyIds: [],
+      funnel: [],
+      dispatchStatusCounts: {},
+      pendingGroupList: [],
+    };
+  }
+
+  const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8')) as {
+    source_xlsx?: string;
+    first_lot_guest_rows_seeded?: number;
+    first_lot_families?: number;
+    first_lot_dispatch_channels?: number;
+    pending_groups?: number;
+    links_from_codes_file?: boolean;
+  };
+  const dispatchRows = fs.existsSync(dispatchPath)
+    ? parseCsv(fs.readFileSync(dispatchPath, 'utf8'))
+    : [];
+  const seedRows = fs.existsSync(seedPath)
+    ? parseCsv(fs.readFileSync(seedPath, 'utf8'))
+    : [];
+  const pendingRows = fs.existsSync(pendingPath)
+    ? parseCsv(fs.readFileSync(pendingPath, 'utf8'))
+    : [];
+  const firstLotFamilyIds = [...new Set(seedRows.map((row) => row.id_familia).filter(Boolean))];
+
+  const dispatchStatusCounts = dispatchRows.reduce<Record<string, number>>((acc, row) => {
+    const status = row.status_envio || 'indefinido';
+    acc[status] = (acc[status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    available: true,
+    sourceXlsx: summary.source_xlsx ?? null,
+    firstLotFamilies: summary.first_lot_families ?? 0,
+    firstLotGuests: summary.first_lot_guest_rows_seeded ?? 0,
+    dispatchChannels: summary.first_lot_dispatch_channels ?? dispatchRows.length,
+    pendingGroups: summary.pending_groups ?? pendingRows.length,
+    linksReady: summary.links_from_codes_file === true,
+    firstLotFamilyIds,
+    funnel: [
+      { label: 'Base revisada', value: summary.first_lot_families ?? 0 },
+      { label: 'Cadastrado no site', value: 0 },
+      { label: 'Links reais', value: summary.links_from_codes_file === true ? summary.first_lot_families ?? 0 : 0 },
+      { label: 'Mensagens prontas', value: dispatchRows.length },
+      { label: 'Enviado', value: 0 },
+      { label: 'Confirmado', value: 0 },
+    ],
+    dispatchStatusCounts,
+    pendingGroupList: pendingRows.slice(0, 20).map((row) => ({
+      id: row.id_familia,
+      name: row.nome_familia || row.id_familia,
+      names: row.nomes_grupo,
+      status: row.status_pendencia || 'pendente',
+    })),
+  };
 }
 function makeStatusSummary() {
   return {
@@ -114,6 +234,10 @@ export async function GET(request: Request) {
     id: doc.id,
     name: asString(doc.data().name, doc.id),
     phone: asString(doc.data().phone),
+    primaryPhone: asString(doc.data().primaryPhone, asString(doc.data().phone)),
+    contactPhones: asStringArray(doc.data().contactPhones),
+    code: asString(doc.data().code),
+    inviteStatus: asString(doc.data().inviteStatus, 'not_sent'),
   }));
   const guests = guestsSnapshot.docs.map((doc) => ({
     id: doc.id,
@@ -181,6 +305,12 @@ export async function GET(request: Request) {
   const totalFamilies = families.length;
   const totalGuests = guests.length;
   const confirmedGuests = confirmedGuestIds.size;
+  const familiesWithLinks = families.filter((family) => family.code).length;
+  const firebaseDispatchChannels = families.reduce((total, family) => {
+    const uniquePhones = new Set(family.contactPhones.length ? family.contactPhones : family.phone ? [family.phone] : []);
+    return total + uniquePhones.size;
+  }, 0);
+  const sentFamilies = families.filter((family) => family.inviteStatus === 'sent').length;
   const pendingFamilies = families
     .filter((family) => !rsvpFamilyIds.has(family.id))
     .map((family) => ({
@@ -190,9 +320,48 @@ export async function GET(request: Request) {
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
+  const operations = readOperationalOverview();
+  const plannedFamilies = operations.firstLotFamilies || totalFamilies;
+  const plannedDispatchChannels = operations.dispatchChannels || firebaseDispatchChannels;
+  const firstLotFamilyIds = new Set<string>(operations.firstLotFamilyIds);
+  const hasFirstLotIds = firstLotFamilyIds.size > 0;
+  const registeredFirstLotFamilies = hasFirstLotIds
+    ? families.filter((family) => firstLotFamilyIds.has(family.id)).length
+    : totalFamilies;
+  const firstLotFamiliesWithLinks = hasFirstLotIds
+    ? families.filter((family) => firstLotFamilyIds.has(family.id) && family.code).length
+    : familiesWithLinks;
+  const confirmedFirstLotFamilies = hasFirstLotIds
+    ? [...rsvpFamilyIds].filter((familyId) => firstLotFamilyIds.has(familyId)).length
+    : confirmedFamilies;
+  const extraFirebaseFamilies = hasFirstLotIds
+    ? families.filter((family) => !firstLotFamilyIds.has(family.id)).length
+    : 0;
+
   return NextResponse.json({
     adminEmail: admin.email,
     generatedAt: new Date().toISOString(),
+    operations: {
+      ...operations,
+      firstLotFamilies: operations.firstLotFamilies || totalFamilies,
+      dispatchChannels: plannedDispatchChannels,
+      linksReady: firstLotFamiliesWithLinks >= plannedFamilies && plannedFamilies > 0,
+      firebaseFamilies: totalFamilies,
+      registeredFirstLotFamilies,
+      extraFirebaseFamilies,
+      firebaseDispatchChannels,
+      familiesWithLinks,
+      firstLotFamiliesWithLinks,
+      sentFamilies,
+      funnel: [
+        { label: 'Base revisada', value: plannedFamilies },
+        { label: 'Cadastrado no site', value: registeredFirstLotFamilies },
+        { label: 'Links reais', value: firstLotFamiliesWithLinks },
+        { label: 'Mensagens prontas', value: plannedDispatchChannels },
+        { label: 'Enviado', value: sentFamilies },
+        { label: 'Confirmado', value: confirmedFirstLotFamilies },
+      ],
+    },
     rsvp: {
       totalFamilies,
       confirmedFamilies,

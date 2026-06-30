@@ -92,7 +92,7 @@ export async function getAdminDb(): Promise<AdminDb | null> {
   try {
     const { getFirestore } = await import('firebase-admin/firestore');
 
-    const databaseId = process.env.FIREBASE_DATABASE_ID?.trim();
+    const databaseId = process.env.FIREBASE_DATABASE_ID?.trim().replace(/\\r\\n?|\\n/g, '');
     cachedDb = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
     return cachedDb;
   } catch (error) {

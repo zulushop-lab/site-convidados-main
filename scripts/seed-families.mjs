@@ -27,6 +27,29 @@ import path from "node:path";
 import crypto from "node:crypto";
 import process from "node:process";
 
+function loadEnvFile(filePath) {
+  const abs = path.resolve(filePath);
+  if (!fs.existsSync(abs)) return;
+
+  const text = fs.readFileSync(abs, "utf8");
+  for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+    const [, key, rawValue] = match;
+    if (process.env[key]) continue;
+    let value = rawValue.trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
 // --- args ---
 const args = process.argv.slice(2);
 const hasFlag = (name) => args.includes(name);
@@ -39,6 +62,10 @@ const commit = hasFlag("--commit");
 const dryRun = !commit;
 const file = getOpt("--file", "docs/templates/planilha-convidados.csv");
 const host = getOpt("--host", "https://site-convidados-main.vercel.app").replace(/\/$/, "");
+const envFile = getOpt("--env-file", ".env.local");
+const codesOut = getOpt("--codes-out", "");
+
+loadEnvFile(envFile);
 
 // Alfabeto sem ambiguos (0/O/1/l/I). 9 chars ~= 46 bits de entropia.
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -96,6 +123,39 @@ function whatsappMessage(familyName, link) {
   );
 }
 
+function readServiceAccount() {
+  const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
+  if (base64) {
+    const decoded = Buffer.from(base64, "base64").toString("utf8").trim();
+    return JSON.parse(decoded.slice(decoded.indexOf("{"), decoded.lastIndexOf("}") + 1));
+  }
+
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.trim();
+  if (raw) {
+    return JSON.parse(raw);
+  }
+
+  return null;
+}
+
+function csvEscape(value) {
+  const raw = String(value ?? "");
+  return /[",\r\n]/.test(raw) ? `"${raw.replaceAll('"', '""')}"` : raw;
+}
+
+function writeCodesCsv(filePath, rows) {
+  if (!filePath) return;
+  const abs = path.resolve(filePath);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  const columns = ["id_familia", "nome_familia", "codigo_rsvp", "link_rsvp"];
+  const content = [
+    columns.join(","),
+    ...rows.map((row) => columns.map((column) => csvEscape(row[column])).join(",")),
+  ].join("\n") + "\n";
+  fs.writeFileSync(abs, content, "utf8");
+  console.log(`\nCodigos RSVP exportados: ${abs}`);
+}
+
 function buildFamilies(rows) {
   const families = new Map();
   const errors = [];
@@ -117,9 +177,10 @@ function buildFamilies(rows) {
     if (!idFamilia || !nomeConvidado) return;
 
     if (!families.has(idFamilia)) {
-      families.set(idFamilia, { id: idFamilia, name: nomeFamilia, phone: "", guests: [] });
+      families.set(idFamilia, { id: idFamilia, name: nomeFamilia, phone: "", contactPhones: [], guests: [] });
     }
     const fam = families.get(idFamilia);
+    if (phone && !fam.contactPhones.includes(phone)) fam.contactPhones.push(phone);
     if (!fam.phone && phone) fam.phone = phone;
     if (eResponsavel && phone) fam.phone = phone;
     const guestId = `${slugify(idFamilia)}_${slugify(nomeConvidado)}`;
@@ -129,6 +190,7 @@ function buildFamilies(rows) {
       name: nomeConvidado,
       isChild: eCrianca,
       isMainGuest: eResponsavel,
+      ...(phone ? { phone } : {}),
       ...(email ? { email } : {}),
     });
   });
@@ -138,7 +200,7 @@ function buildFamilies(rows) {
     if (!fam.guests.some((g) => g.isMainGuest) && fam.guests[0]) {
       fam.guests[0].isMainGuest = true;
     }
-    if (!fam.phone) {
+    if (!fam.contactPhones.length) {
       errors.push(`familia ${fam.id}: telefone_whatsapp vazio para o grupo`);
     }
   }
@@ -173,31 +235,38 @@ async function main() {
     process.exit(1);
   }
   console.log(`OK: ${families.length} familia(s), ${families.reduce((n, f) => n + f.guests.length, 0)} convidado(s).`);
+  console.log(`Canais de contato unicos: ${families.reduce((n, f) => n + f.contactPhones.length, 0)} telefone(s).`);
 
   // --- COMMIT path: Admin SDK + idempotencia de codigo ---
-  let admin = null;
   let db = null;
   if (commit) {
+    let appTools;
+    let firestoreTools;
     try {
-      admin = (await import("firebase-admin")).default;
+      appTools = await import("firebase-admin/app");
+      firestoreTools = await import("firebase-admin/firestore");
     } catch {
       console.error("\nfirebase-admin ausente. Instale: npm install firebase-admin\n");
       process.exit(1);
     }
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      console.error("\nGOOGLE_APPLICATION_CREDENTIALS nao definido (service account). Abortando.\n");
+    const serviceAccount = readServiceAccount();
+    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && !serviceAccount) {
+      console.error("\nCredencial Admin SDK ausente. Configure GOOGLE_APPLICATION_CREDENTIALS ou FIREBASE_SERVICE_ACCOUNT_BASE64. Abortando.\n");
       process.exit(1);
     }
-    if (!admin.apps.length) {
-      admin.initializeApp({ credential: admin.credential.applicationDefault() });
-    }
-    const databaseId = process.env.FIREBASE_DATABASE_ID;
-    db = databaseId ? admin.firestore(undefined, databaseId) : admin.firestore();
+    const { getApps, initializeApp, cert, applicationDefault } = appTools;
+    const { getFirestore } = firestoreTools;
+    const app = getApps()[0] ?? initializeApp({
+      credential: serviceAccount ? cert(serviceAccount) : applicationDefault(),
+    });
+    const databaseId = process.env.FIREBASE_DATABASE_ID?.trim().replace(/\\r\\n?|\\n/g, "");
+    db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
     console.log(`Firestore alvo: ${databaseId || "(default)"}`);
   }
 
   // gera/reusa codigo por familia e imprime links + mensagem
   const usedCodes = new Set();
+  const codeRows = [];
   for (const fam of families) {
     let code = null;
 
@@ -215,9 +284,16 @@ async function main() {
     fam.code = code;
 
     const baseLink = `${host}/rsvp/${code}`;
+    codeRows.push({
+      id_familia: fam.id,
+      nome_familia: fam.name,
+      codigo_rsvp: code,
+      link_rsvp: baseLink,
+    });
     console.log(`\n=== ${fam.name} (${fam.id}) ===`);
     console.log(`  code:  ${code}`);
     console.log(`  link:  ${baseLink}`);
+    console.log(`  canais: ${fam.contactPhones.join(", ")}`);
     for (const g of fam.guests) {
       console.log(`   - ${g.name}${g.isMainGuest ? " [responsavel]" : ""}${g.isChild ? " [crianca]" : ""}: ${baseLink}?c=${g.id}`);
     }
@@ -228,7 +304,15 @@ async function main() {
       batch.set(db.collection("codes").doc(code), { familyId: fam.id }, { merge: true });
       batch.set(
         db.collection("families").doc(fam.id),
-        { id: fam.id, name: fam.name, code, ...(fam.phone ? { phone: fam.phone } : {}) },
+        {
+          id: fam.id,
+          name: fam.name,
+          code,
+          primaryPhone: fam.phone,
+          phone: fam.phone,
+          contactPhones: fam.contactPhones,
+          inviteStatus: "not_sent",
+        },
         { merge: true },
       );
       for (const g of fam.guests) {
@@ -237,6 +321,8 @@ async function main() {
       await batch.commit();
     }
   }
+
+  writeCodesCsv(codesOut, codeRows);
 
   console.log(dryRun ? `\nDry-run concluido. Rode com --commit para gravar.\n` : `\nConcluido: ${families.length} familia(s) gravada(s).\n`);
 }

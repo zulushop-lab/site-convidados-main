@@ -29,3 +29,6 @@ output/galeria-noivos/manifest.json
 # Local visual validation captures. Tracked reference captures remain versioned.
 output/playwright/*.png
 output/playwright/*.jpg
+
+# Backups locais com dados pessoais/operacionais do Firebase.
+output/firebase-backups/
