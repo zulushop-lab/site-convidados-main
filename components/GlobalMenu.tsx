@@ -19,7 +19,7 @@ export function GlobalNavigationOptions() {
     setMounted(true);
   }, []);
 
-  const currentTheme = mounted ? (theme === 'system' ? resolvedTheme : theme) : 'dark';
+  const currentTheme = mounted ? (theme === 'system' ? resolvedTheme : theme) : 'light';
   const isDark = currentTheme === 'dark';
 
   useEffect(() => {

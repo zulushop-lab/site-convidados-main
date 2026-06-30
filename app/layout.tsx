@@ -52,7 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${montserrat.variable} ${cormorant.variable} ${playfair.variable} ${alexBrush.variable}`}>
       <body className="antialiased min-h-[100dvh] flex flex-col font-body">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          storageKey="site-convidados-theme-v2"
+        >
           <AuthProvider>
             <GuestProvider>
               <GlobalAudioPlayer />

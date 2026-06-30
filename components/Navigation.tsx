@@ -3,24 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Heart, Calendar, UserCheck, Gift, Sun, Moon, Menu, X, ChevronRight, ExternalLink } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const triggerLoading = (href?: string) => {
-  if (typeof window !== 'undefined') {
-    // Only trigger if we are navigating to a different page or the route starts with /
-    const currentPath = window.location.pathname;
-    if (href && (href.startsWith('/#') || href === currentPath)) {
-      return;
-    }
-    window.dispatchEvent(new Event('ais-loading-start'));
-  }
-};
-
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -31,21 +20,27 @@ export function ThemeToggle() {
     return <div className="w-8 h-8" />; // placeholder
   }
 
+  const activeTheme = resolvedTheme ?? theme ?? 'light';
+  const isDark = activeTheme === 'dark';
+  const nextTheme = isDark ? 'light' : 'dark';
+
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="p-2 rounded-full text-gold dark:text-secondary hover:bg-surface-container/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary relative overflow-hidden"
-      aria-label="Alternar tema"
+      type="button"
+      onClick={() => setTheme(nextTheme)}
+      className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full text-gold transition-colors hover:bg-surface-container/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-secondary"
+      aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+      title={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
-          key={theme}
+          key={activeTheme}
           initial={{ y: 20, opacity: 0, rotate: -45 }}
           animate={{ y: 0, opacity: 1, rotate: 0 }}
           exit={{ y: -20, opacity: 0, rotate: 45 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </motion.div>
       </AnimatePresence>
     </button>
@@ -132,5 +127,4 @@ export function TopNav() {
     </>
   );
 }
-
 
